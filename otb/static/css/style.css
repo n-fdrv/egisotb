@@ -1,0 +1,23 @@
+:root {
+  --var-bgcolor: #fff;
+  --var-fontcolor: #000;
+}
+
+[dark] {
+  --var-bgcolor: #333;
+  --var-fontcolor: #eee;
+}
+
+body {
+  background-color: var(--var-bgcolor);
+  color: var(--var-fontcolor);
+}
+
+.form-check-input:checked {
+    background-color: gray;
+    border-color: black;
+}
+
+.aside-dark {
+    background-color: #333;
+}

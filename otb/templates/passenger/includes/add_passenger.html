@@ -1,0 +1,153 @@
+ {% load userfilters %}
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">
+            {% if is_edit %}
+            Редактировать пассажира
+          {% else %}
+            Добавить нового пассажира
+          {% endif %}
+        </h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+        <form method="post" enctype="multipart/form-data" action="
+              {% if is_edit %}
+<!--                {% url 'posts:post_edit' post.id %}-->
+              {% else %}
+                {% url 'passenger:passenger_list' %}
+              {% endif %}">
+              {% csrf_token %}
+          <div class="modal-body">
+            <div class="row g-3 align-items-center">
+              {% if form.errors %}
+                  {% for field in form %}
+                    {% for error in field.errors %}
+                      <div class="alert alert-danger">
+                        {{ error|escape }}
+                      </div>
+                    {% endfor %}
+                  {% endfor %}
+                  {% for error in form.non_field_errors %}
+                    <div class="alert alert-danger">
+                      {{ error|escape }}
+                    </div>
+                  {% endfor %}
+              {% endif %}
+                <div class="mt-3">
+                {% for field in form %}
+
+
+                <div class="row mb-3">
+                  <label for="{{ field.id_for_label }}" class="col-sm-4 col-form-label">
+                    {{ field.label }}
+                      {% if field.field.required %}
+                        <span class="required text-danger">*</span>
+                      {% endif %}
+                  </label>
+                  <div class="col-sm-8">
+                      {{ field|addclass:'form-control'}}
+                    {% if field.help_text %}
+                      <small
+                         id="{{ field.id_for_label }}-help"
+                         class="form-text text-muted"
+                      >
+                        {{ field.help_text|safe }}
+                      </small>
+                    {% elif is_edit and field.label == 'Text' %}
+                      <small
+                         id="{{ field.id_for_label }}-help"
+                         class="form-text text-muted"
+                      >
+                        Текст нового поста
+                      </small>
+                    {% endif %}
+                  </div>
+                </div>
+              {% endfor %}
+                  </div>
+<!--                    <div class="row mb-3">-->
+<!--                        <label for="doc_type" class="col-sm-4 col-form-label">Вид документа</label>-->
+<!--                        <div class="col-sm-8">-->
+<!--                          <select id="doc_type" name="doc_type" class="form-select">-->
+<!--                            {% for doc_type in doc_types %}-->
+<!--                            <option value="{{doc_type}}">{{doc_type}}</option>-->
+<!--                            {% endfor %}-->
+<!--                          </select>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                    <div class="row mb-3">-->
+<!--                        <label for="doc_number" class="col-sm-4 col-form-label">Номер документа</label>-->
+<!--                        <div class="col-sm-8">-->
+<!--                          <input name="doc_number" type="text" class="form-control" id="doc_number">-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                    <div class="row mb-3">-->
+<!--                        <label for="citizenship" class="col-sm-4 col-form-label">Гражданство</label>-->
+<!--                        <div class="col-sm-8">-->
+<!--                          <select id="citizenship" name="citizenship" class="form-select">-->
+<!--                            {% for citizenship in citizenships %}-->
+<!--                            <option value="{{citizenship}}">{{citizenship}}</option>-->
+<!--                            {% endfor %}-->
+<!--                          </select>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                    <div class="row mb-3">-->
+<!--                      <label for="surname" class="col-sm-4 col-form-label">Фамилия</label>-->
+<!--                      <div class="col-sm-8">-->
+<!--                        <input name="surname" type="text" class="form-control" id="surname">-->
+<!--                      </div>-->
+<!--                    </div>-->
+<!--                    <div class="row mb-3">-->
+<!--                      <label for="name" class="col-sm-4 col-form-label">Имя</label>-->
+<!--                      <div class="col-sm-8">-->
+<!--                        <input name="name" type="text" class="form-control" id="name">-->
+<!--                      </div>-->
+<!--                    </div>-->
+<!--                    <div class="row mb-3">-->
+<!--                      <label for="patronymic" class="col-sm-4 col-form-label">Отчество</label>-->
+<!--                      <div class="col-sm-8">-->
+<!--                        <input name="patronymic" type="text" class="form-control" id="patronymic">-->
+<!--                      </div>-->
+<!--                    </div>-->
+<!--                    <div class="row mb-3">-->
+<!--                      <label for="birthday" class="col-sm-4 col-form-label">Дата рождения</label>-->
+<!--                      <div class="col-sm-8">-->
+<!--                        <input name="birthday" type="date" class="form-control" id="birthday">-->
+<!--                      </div>-->
+<!--                    </div>-->
+<!--                    <fieldset class="row mb-3">-->
+<!--                      <legend class="col-form-label col-sm-4 pt-0">Пол</legend>-->
+<!--                      <div class="col-sm-8">-->
+<!--                        <div class="form-check">-->
+<!--                          <input class="form-check-input" type="radio" name="gender" id="gender_male" value="Male" checked>-->
+<!--                          <label class="form-check-label" for="gender_male">-->
+<!--                            Мужской-->
+<!--                          </label>-->
+<!--                        </div>-->
+<!--                        <div class="form-check">-->
+<!--                          <input class="form-check-input" type="radio" name="gender" id="gender_female" value="Female">-->
+<!--                          <label class="form-check-label" for="gender_female">-->
+<!--                            Женский-->
+<!--                          </label>-->
+<!--                        </div>-->
+<!--                      </div>-->
+<!--                    </fieldset>-->
+                </div>
+        </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="submit" class="btn btn-primary">
+              {% if is_edit %}
+                Сохранить
+              {% else %}
+                Добавить
+              {% endif %}
+        </button>
+      </div>
+                    </form>
+    </div>
+  </div>
+</div>

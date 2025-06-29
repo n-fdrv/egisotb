@@ -1,0 +1,4 @@
+<button class="tag-btn btn btn-dark badge rounded-pill">
+  {% load user_filters %}
+    #{{ tag.name }} - {{ tag|count_tags }}
+</button>
