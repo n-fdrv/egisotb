@@ -21,3 +21,12 @@ body {
 .aside-dark {
     background-color: #333;
 }
+
+.hover-row:hover {
+    background-color: #f8f9fa !important;
+    cursor: pointer !important;
+  }
+
+.hover-row:hover td {
+  background-color: #f8f9fa !important;
+}

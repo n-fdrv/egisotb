@@ -3,6 +3,7 @@
 Последние обновления на сайте
 {% endblock %}
 {% block content %}
+{% load static %}
   <div class="container py-5">
     <div class="row">
       <div class="col-10">
@@ -45,4 +46,10 @@
       </div>
   </div>
 {% include 'passenger/includes/add_passenger.html' %}
+{% include 'passenger/includes/passenger_detail.html' %}
+<!-- Подключаем JS -->
+<script src="{% static 'js/passenger_search.js' %}"></script>
+<script src="{% static 'js/document_validator.js' %}"></script>
+<script src="{% static 'js/passenger_detail.js' %}"></script>
+
 {% endblock %}

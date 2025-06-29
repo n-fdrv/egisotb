@@ -1,0 +1,38 @@
+/* Стиль для строк таблицы */
+.table-hover tbody tr {
+  transition: background-color 0.3s ease;
+  cursor: pointer;
+}
+
+/* Стиль при наведении */
+.table-hover tbody tr:hover {
+  background-color: #f5f5f5;
+}
+
+/* Стиль для выделенной строки */
+.table-hover tbody tr.selected {
+  background-color: #e9f7fe;
+}
+
+/* Убираем стандартное подчеркивание у ссылок в таблице */
+.table-hover tbody tr a {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+/* Стили для таблицы */
+.table-hover tbody tr {
+  transition: background-color 0.3s ease;
+  cursor: pointer;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #f5f5f5;
+}
+
+/* Стили для модального окна */
+#passengerModal .table-sm td,
+#passengerModal .table-sm th {
+  padding: 0.5rem;
+}
