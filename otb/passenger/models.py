@@ -40,7 +40,9 @@ class Passenger(CreatedModel):
         MALE = "M", _("Мужской")
         FEMALE = "F", _("Женский")
 
-
+    ticket_number = models.PositiveIntegerField(
+        verbose_name='№ билета'
+    )
     surname = models.CharField(
         verbose_name='Фамилия',
         max_length=200

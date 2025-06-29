@@ -31,7 +31,6 @@
 
           {% for passenger in page_obj %}
           {% include 'passenger/includes/list.html' %}
-          {% if not forloop.last %}<hr>{% endif %}
           {% endfor %}
           {% include 'includes/paginator.html' %}
           </table>
