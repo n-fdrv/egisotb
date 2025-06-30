@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Главная страница{% endblock %}
+
+{% block content %}
+<div class="row g-4 text-center">
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Добавление пассажиров</h5>
+                <p class="card-text">Быстро добавляйте новых пассажиров в систему через удобный интерфейс.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Управление рейсами</h5>
+                <p class="card-text">Следите за списком пассажиров по каждому рейсу.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">История изменений</h5>
+                <p class="card-text">Смотрите, кто и когда редактировал данные.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="my-5">
+
+<div class="text-center">
+    <h2>Добро пожаловать в PassengerSystem</h2>
+    <p class="lead">Это система управления пассажирами и рейсами.</p>
+    <a href="{% url 'passenger_list' %}" class="btn btn-primary btn-lg">Перейти к пассажирам</a>
+</div>
+
+{% endblock %}

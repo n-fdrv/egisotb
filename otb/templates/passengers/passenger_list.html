@@ -1,0 +1,789 @@
+{% extends "base.html" %}
+{% block title %}Пассажиры{% endblock %}
+
+{% block content %}
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3>Список пассажиров</h3>
+            <button class="btn btn-primary" id="addPassengerBtn">Добавить пассажира</button>
+        </div>
+
+        <!-- Поисковая строка -->
+        <div class="row g-2 mb-4">
+            <div class="col-md-4">
+                <input type="text" id="searchSurname" class="form-control" placeholder="Фамилия">
+            </div>
+            <div class="col-md-4">
+                <input type="text" id="searchDocNumber" class="form-control" placeholder="Номер документа">
+            </div>
+            <div class="col-md-4">
+                <input type="text" id="searchTicketNumber" class="form-control" placeholder="Номер билета">
+            </div>
+        </div>
+
+        <!-- Фильтр активности -->
+        <div class="mb-4 d-flex align-items-center gap-3">
+            <label for="activeFilter" class="fw-bold mb-0">Показывать:</label>
+            <select id="activeFilter" class="form-select w-auto">
+                <option value="true">Ожидают посадки</option>
+                <option value="false">Архив</option>
+                <option value="">Все</option>
+            </select>
+        </div>
+
+        <!-- Таблица -->
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th scope="col">№</th>
+                    <th scope="col">Фамилия</th>
+                    <th scope="col">Имя</th>
+                    <th scope="col">Отчество</th>
+                    <th scope="col">Дата рождения</th>
+                    <th scope="col">Пол</th>
+                    <th scope="col">Гражданство</th>
+                    <th scope="col">Документ</th>
+                    <th scope="col">Номер документа</th>
+                    <th scope="col">Ожидает посадки</th>
+                    <th scope="col">Действия</th>
+                </tr>
+            </thead>
+            <tbody id="passengers-body">
+                <!-- Сюда будут подгружаться строки -->
+            </tbody>
+        </table>
+
+        <!-- Пагинация -->
+        <nav aria-label="Page navigation" id="pagination" style="display: none;">
+            <ul class="pagination justify-content-center"></ul>
+        </nav>
+    </div>
+
+<!-- Модальное окно -->
+    <div class="modal fade" id="passengerModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-scrollable modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="passengerModalLabel">Добавить пассажира</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <form id="passengerForm" class="needs-validation" novalidate>
+            {% csrf_token %}
+            <input type="hidden" id="passengerId">
+
+            <div class="modal-body">
+              <div class="row g-3">
+                <!-- Левая колонка — форма -->
+                  <div class="col-md-6">
+                      <div class="mb-3">
+                        <label for="surnameInput" class="form-label">Фамилия</label>
+                        <input type="text" class="form-control" id="surnameInput" required>
+                        <div class="invalid-feedback">Введите фамилию</div>
+                      </div>
+                      <div class="mb-3">
+                        <label for="nameInput" class="form-label">Имя</label>
+                        <input type="text" class="form-control" id="nameInput" required>
+                        <div class="invalid-feedback">Введите имя</div>
+                      </div>
+                      <div class="mb-3">
+                        <label for="patronymicInput" class="form-label">Отчество</label>
+                        <input type="text" class="form-control" id="patronymicInput">
+                      </div>
+                      <div class="mb-3">
+                        <label for="birthdayInput" class="form-label">Дата рождения</label>
+                        <input type="date" class="form-control" id="birthdayInput" required>
+                        <div class="invalid-feedback">Выберите дату</div>
+                      </div>
+                      <div class="mb-3">
+                        <label for="genderSelect" class="form-label">Пол</label>
+                        <select class="form-select" id="genderSelect" required>
+                          <option value="">Выберите пол</option>
+                          <option value="M">Мужской</option>
+                          <option value="F">Женский</option>
+                        </select>
+                        <div class="invalid-feedback">Выберите пол</div>
+                      </div>
+                  </div>
+
+                <!-- Правая колонка — документы -->
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="citizenshipSelect" class="form-label">Гражданство</label>
+                    <select class="form-select" id="citizenshipSelect" required>
+                      <option value="">Выберите гражданство</option>
+                    </select>
+                    <div class="invalid-feedback">Выберите гражданство</div>
+                  </div>
+                  <div class="mb-3">
+                    <label for="docTypeSelect" class="form-label">Тип документа</label>
+                    <select class="form-select" id="docTypeSelect" required>
+                      <option value="">Выберите тип документа</option>
+                    </select>
+                    <div class="invalid-feedback">Выберите тип документа</div>
+                  </div>
+                  <div class="mb-3">
+                    <label for="docNumberInput" class="form-label">Номер документа</label>
+                    <input type="text" class="form-control" id="docNumberInput" required>
+                    <div class="invalid-feedback">Введите номер документа</div>
+                  </div>
+                    <div class="mb-3">
+                        <label for="ticketNumberInput" class="form-label">Номер билета</label>
+                        <input type="number" class="form-control" id="ticketNumberInput" required>
+                        <div class="invalid-feedback">Введите номер билета</div>
+                    </div>
+                  <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="isActiveCheck" checked>
+                    <label class="form-check-label" for="isActiveCheck">Активный</label>
+                  </div>
+                </div>
+              </div>
+
+            <!-- Нижняя колонка с поиском -->
+                <div class="col-md-12 ">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Фамилия</th>
+                                    <th scope="col">Имя</th>
+                                    <th scope="col">Отчество</th>
+                                    <th scope="col">Дата рождения</th>
+                                    <th scope="col">Гражданство</th>
+                                    <th scope="col">Документ</th>
+                                    <th scope="col">Номер документа</th>
+                                    <th scope="col">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="searchResults" >
+                                <!-- Сюда будут подгружаться строки -->
+                            </tbody>
+                        </table>
+                    </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+              <button type="button" id="deletePassengerBtn" class="btn btn-danger me-auto d-none">Удалить</button>
+              <button type="submit" class="btn btn-primary" id="savePassengerBtn">Сохранить</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+{% endblock %}
+{% block extra_js %}
+{% load static %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    Promise.all([
+            new Promise(resolve => {
+                loadCitizenships();
+                resolve();
+            }),
+            new Promise(resolve => {
+                loadDocTypes();
+                resolve();
+            })
+        ]).then(() => {
+            // Теперь справочники точно загружены
+            loadPassengers();
+            setupSearchHandlers();
+            setupCopyHandlers();
+        });
+    const passengerBody = document.getElementById('passengers-body');
+    const copyPassengerBody = document.getElementById('searchResults');
+    const pagination = document.getElementById('pagination');
+
+    const searchSurname = document.getElementById('searchSurname');
+    const searchDocNumber = document.getElementById('searchDocNumber');
+    const searchTicketNumber = document.getElementById('searchTicketNumber');
+    const activeFilter = document.getElementById('activeFilter');
+
+    const passengerModal = new bootstrap.Modal(document.getElementById('passengerModal'));
+    const passengerForm = document.getElementById('passengerForm');
+    const passengerIdInput = document.getElementById('passengerId');
+    const surnameInput = document.getElementById('surnameInput');
+    const nameInput = document.getElementById('nameInput');
+    const patronymicInput = document.getElementById('patronymicInput');
+    const birthdayInput = document.getElementById('birthdayInput');
+    const genderSelect = document.getElementById('genderSelect');
+    const citizenshipSelect = document.getElementById('citizenshipSelect');
+    const docTypeSelect = document.getElementById('docTypeSelect');
+    const docNumberInput = document.getElementById('docNumberInput');
+    const ticketNumberInput = document.getElementById('ticketNumberInput');
+    const isActiveCheck = document.getElementById('isActiveCheck');
+    const deletePassengerBtn = document.getElementById('deletePassengerBtn');
+    const savePassengerBtn = document.getElementById('savePassengerBtn');
+
+    let currentPassengerId = null;
+    let citizenshipsMap = {};
+    let docTypesMap = {};
+    let lastTicketNumber = 1000;
+
+
+    async function loadLastTicketNumber() {
+        try {
+            const res = await fetch('/api/passengers/last_ticket/');
+            const data = await res.json();
+            lastTicketNumber = parseInt(data.last_ticket) + 1;
+            ticketNumberInput.value = lastTicketNumber;
+        } catch (err) {
+            console.error('Ошибка загрузки номера билета:', err);
+            // Если ошибка, используем последний из таблицы или 1000
+            ticketNumberInput.value = lastTicketNumber || 1000;
+        }
+    }
+
+
+    function setupSearchHandlers() {
+        if (searchSurname) {
+            searchSurname.addEventListener('input', () => {
+                currentPage = 1;
+                loadPassengers(currentPage);
+            });
+        }
+
+        if (searchDocNumber) {
+            searchDocNumber.addEventListener('input', () => {
+                currentPage = 1;
+                loadPassengers(currentPage);
+            });
+        }
+
+        if (searchTicketNumber) {
+            searchTicketNumber.addEventListener('input', () => {
+                currentPage = 1;
+                loadPassengers(currentPage);
+            });
+        }
+
+        if (activeFilter) {
+            activeFilter.addEventListener('change', () => {
+                currentPage = 1;
+                loadPassengers(currentPage);
+            });
+        }
+    }
+
+    function setupCopyHandlers() {
+        if (surnameInput) {
+            surnameInput.addEventListener('input', () => {
+                currentPage = 1;
+                copyPassengers(currentPage);
+            });
+        }
+
+        if (nameInput) {
+            nameInput.addEventListener('input', () => {
+                currentPage = 1;
+                copyPassengers(currentPage);
+            });
+        }
+
+        if (docNumberInput) {
+            docNumberInput.addEventListener('input', () => {
+                currentPage = 1;
+                copyPassengers(currentPage);
+            });
+        }
+
+    }
+
+    function fillFormFromPassenger(data) {
+        surnameInput.value = data.surname;
+        nameInput.value = data.name;
+        patronymicInput.value = data.patronymic || '';
+        birthdayInput.value = data.birthday.split('T')[0]; // формат даты правильный
+        genderSelect.value = data.gender; // должен быть 'M' или 'F'
+        citizenshipSelect.value = data.citizenship; // ID страны
+        docTypeSelect.value = data.doc_type; // ID типа документа
+        docNumberInput.value = data.doc_number;
+        isActiveCheck.checked = data.is_active;
+    }
+
+    async function copyPassengers(page = 1) {
+        const url = new URL('/api/passengers/', window.location.origin);
+        url.searchParams.set('page', page);
+        url.searchParams.set('limit', 3);
+
+        const surname = surnameInput?.value.trim();
+        const name = nameInput?.value.trim();
+        const docNumber = docNumberInput?.value.trim();
+
+        if (surname && surname.length >= 3) url.searchParams.set('surname', surname);
+        if (name && name.length >= 3) url.searchParams.set('name', name);
+        if (docNumber && docNumber.length >= 6) url.searchParams.set('doc_number', docNumber);
+
+
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
+            const data = await res.json();
+            renderCopyTable(data.results);
+            setupCopyBtnHandlers(); // ← важно: обновляем обработчики
+        } catch (err) {
+            console.error(err);
+            copyPassengerBody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Ошибка загрузки</td></tr>';
+        }
+    }
+
+    // --- Отрисовка таблицы ---
+    function renderCopyTable(passengers) {
+        copyPassengerBody.innerHTML = '';
+        if (!passengers.length) {
+            copyPassengerBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Нет данных</td></tr>';
+            return;
+        }
+
+        passengers.forEach(p => {
+            const tr = document.createElement('tr');
+            tr.dataset.id = p.id;
+            tr.innerHTML = `
+                <td>${p.surname}</td>
+                <td>${p.name}</td>
+                <td>${p.patronymic || 'NA'}</td>
+                <td>${new Date(p.birthday).toLocaleDateString()}</td>
+                <td>${citizenshipsMap[p.citizenship] || 'Ошибка загрузки'}</td>
+                <td>${docTypesMap[p.doc_type] || 'Ошибка загрузки'}</td>
+                <td>${p.doc_number}</td>
+                <td>
+                    <button class="btn btn-sm btn-success copy-btn">
+                        Копировать
+                    </button>
+                </td>
+            `;
+            copyPassengerBody.appendChild(tr);
+        });
+
+        setupCopyBtnHandlers(); // ← добавим обработчики для кнопок "Копировать"
+    }
+
+   function setupCopyBtnHandlers() {
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', async function () {
+                const row = this.closest('tr');
+                const id = row.dataset.id;
+
+                try {
+                    const res = await fetch(`/api/passengers/${id}/`);
+                    if (!res.ok) throw new Error(`Пассажир #${id} не найден`);
+
+                    const data = await res.json();
+
+                    // Заполняем форму
+                    fillFormFromPassenger(data);
+
+                    // Опционально: скрываем результаты поиска
+                    document.getElementById('searchResults').innerHTML = `
+                        <div class="alert alert-success">Данные загружены в форму</div>
+                    `;
+                } catch (err) {
+                    console.error(err);
+                    alert('Ошибка при загрузке данных пассажира');
+                }
+            });
+        });
+    }
+
+    // --- Загрузка данных ---
+    async function loadPassengers(page = 1) {
+        const url = new URL('/api/passengers/', window.location.origin);
+        url.searchParams.set('page', page);
+
+        const surname = searchSurname?.value.trim();
+        const docNumber = searchDocNumber?.value.trim();
+        const ticketNumber = searchTicketNumber?.value.trim();
+        const isActive = activeFilter?.value;
+
+        if (surname) url.searchParams.set('surname', surname);
+        if (docNumber) url.searchParams.set('doc_number', docNumber);
+        if (ticketNumber) url.searchParams.set('ticket_number', ticketNumber);
+        if (isActive !== '') url.searchParams.set('is_active', isActive);
+
+        console.log('Запрос:', url.toString()); // ← очень важно для отладки
+
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
+            const data = await res.json();
+
+            renderTable(data.results);
+            renderPagination(data.count, page, data.next ? page + 1 : null);
+        } catch (err) {
+            console.error(err);
+            passengerBody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Ошибка загрузки</td></tr>';
+        }
+    }
+
+    // --- Отрисовка таблицы ---
+    function renderTable(passengers) {
+    passengerBody.innerHTML = '';
+    if (!passengers.length) {
+        passengerBody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">Нет данных</td></tr>';
+        return;
+    }
+
+    passengers.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.dataset.id = p.id;
+        tr.innerHTML = `
+            <td>${p.ticket_number}</td>
+            <td>${p.surname}</td>
+            <td>${p.name}</td>
+            <td>${p.patronymic || 'NA'}</td>
+            <td>${new Date(p.birthday).toLocaleDateString()}</td>
+            <td>${p.gender}</td>
+            <td>${citizenshipsMap[p.citizenship] || 'Ошибка загрузки'}</td>
+            <td>${docTypesMap[p.doc_type] || 'Ошибка загрузки'}</td>
+            <td>${p.doc_number}</td>
+            <td>${p.is_active ? 'Да' : 'Нет'}</td>
+            <td>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-warning edit-btn" title="Редактировать">
+                        <img src="{% static 'svg/pencil.svg' %}" alt="Редактировать" width="20" height="20">
+                    </button>
+                    <button class="btn btn-sm btn-danger delete-btn" title="Удалить">
+                        <img src="{% static 'svg/trash.svg' %}" alt="Удалить" width="20" height="20">
+                    </button>
+                </div>
+            </td>
+        `;
+        passengerBody.appendChild(tr);
+    });
+
+    setupRowHandlers();
+}
+
+    // --- Обработчики строк ---
+    function setupRowHandlers() {
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const row = this.closest('tr');
+                const id = row.dataset.id;
+                openEditPassenger(id);
+            });
+        });
+
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const row = this.closest('tr');
+                const id = row.dataset.id;
+                if (confirm('Вы уверены?')) {
+                    deletePassenger(id);
+                }
+            });
+        });
+    }
+
+    function setupCopyBtnHandlers() {
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', async function () {
+                const row = this.closest('tr');
+                const id = row.dataset.id;
+
+                try {
+                    const res = await fetch(`/api/passengers/${id}/`);
+                    if (!res.ok) throw new Error('Пассажир не найден');
+
+                    const data = await res.json();
+                    fillFormFromPassenger(data);
+
+                    // Можно показать уведомление
+                    document.getElementById('searchResults').innerHTML = `
+                        <div class="alert alert-success">Данные загружены в форму</div>
+                    `;
+                } catch (err) {
+                    console.error(err);
+                    alert('Ошибка при копировании данных');
+                }
+            });
+        });
+    }
+
+    function renderPagination(total, current, next) {
+    pagination.style.display = total > 10 ? 'block' : 'none';
+    const ul = pagination.querySelector('.pagination');
+    ul.innerHTML = '';
+
+    // Кнопка "Назад"
+    if (current > 1) {
+        const prevLi = document.createElement('li');
+        prevLi.className = 'page-item';
+        prevLi.innerHTML = `<a class="page-link" href="#">«</a>`;
+        prevLi.addEventListener('click', e => {
+            e.preventDefault();
+            loadPassengers(current - 1);
+        });
+        ul.appendChild(prevLi);
+    }
+
+    // Номера страниц
+    const totalPages = Math.ceil(total / 10); // page_size = 10
+    for (let i = 1; i <= totalPages; i++) {
+        const li = document.createElement('li');
+        li.className = 'page-item' + (i === current ? ' active' : '');
+        li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+        li.addEventListener('click', e => {
+            e.preventDefault();
+            loadPassengers(i);
+        });
+        ul.appendChild(li);
+    }
+
+    // Кнопка "Вперёд"
+    if (next) {
+        const nextLi = document.createElement('li');
+        nextLi.className = 'page-item';
+        nextLi.innerHTML = `<a class="page-link" href="#">»</a>`;
+        nextLi.addEventListener('click', e => {
+            e.preventDefault();
+            loadPassengers(next);
+        });
+        ul.appendChild(nextLi);
+    }
+}
+
+    // --- Открытие формы для редактирования ---
+       async function openEditPassenger(id) {
+        try {
+            const res = await fetch(`/api/passengers/${id}/`);
+            const data = await res.json();
+
+            currentPassengerId = id;
+
+            // Заполняем форму
+            surnameInput.value = data.surname;
+            nameInput.value = data.name;
+            patronymicInput.value = data.patronymic || '';
+            birthdayInput.value = data.birthday.split('T')[0];
+            genderSelect.value = data.gender;
+            docNumberInput.value = data.doc_number;
+            isActiveCheck.checked = data.is_active;
+            ticketNumberInput.value = data.ticket_number;
+
+            // Установка значений для select
+            citizenshipSelect.value = data.citizenship;
+            docTypeSelect.value = data.doc_type;
+
+            // Обновляем заголовок и кнопки
+            document.getElementById('passengerModalLabel').textContent = 'Редактировать пассажира';
+            deletePassengerBtn.classList.remove('d-none');
+            savePassengerBtn.textContent = 'Обновить';
+            console.log('Гражданство:', data.citizenship);
+            console.log('Вид документа:', data.doc_type);
+            passengerModal.show();
+        } catch (err) {
+            alert('Ошибка загрузки данных');
+            console.error(err);
+        }
+    }
+
+    // --- Удаление пассажира ---
+        async function deletePassenger(id) {
+            try {
+                const res = await fetch(`/api/passengers/${id}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (res.ok) {
+                    alert('Пассажир удалён');
+                    loadPassengers();
+                } else {
+                    alert('Ошибка удаления');
+                    console.error('Ошибка:', res.status, res.statusText);
+                }
+            } catch (err) {
+                alert('Ошибка сети');
+                console.error(err);
+            }
+        }
+
+    // --- Сохранение пассажира ---
+    passengerForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        // Отключаем HTML-валидацию, если нужно
+        if (!this.checkValidity()) {
+            this.classList.add('was-validated');
+            return;
+        }
+
+        const isEditMode = !!currentPassengerId;
+        const url = isEditMode ? `/api/passengers/${currentPassengerId}/` : '/api/passengers/';
+        const method = isEditMode ? 'PUT' : 'POST';
+
+        const body = JSON.stringify({
+            surname: surnameInput.value.trim(),
+            name: nameInput.value.trim(),
+            patronymic: patronymicInput.value.trim() || null,
+            birthday: birthdayInput.value,
+            gender: genderSelect.value,
+            citizenship: parseInt(citizenshipSelect.value),
+            doc_type: parseInt(docTypeSelect.value),
+            doc_number: docNumberInput.value.trim(),
+            is_active: isActiveCheck.checked,
+            ticket_number: parseInt(ticketNumberInput.value),
+        });
+
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body
+            });
+
+            if (res.ok) {
+                passengerModal.hide();
+                loadPassengers();
+                resetForm();
+                alert(isEditMode ? 'Данные обновлены' : 'Пассажир создан');
+            } else {
+                const errData = await res.json();
+                console.error('Ошибка API:', errData);
+                alert('Ошибка сохранения. Смотрите консоль.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Ошибка сети');
+        }
+    });
+
+    // --- Открытие формы для добавления ---
+    document.getElementById('addPassengerBtn')?.addEventListener('click', function () {
+        resetForm();
+        document.getElementById('passengerModalLabel').textContent = 'Добавить пассажира';
+        deletePassengerBtn.classList.add('d-none');
+        savePassengerBtn.textContent = 'Сохранить';
+
+        // Автоматически ставим номер билета
+        loadLastTicketNumber();
+        passengerModal.show();
+    });
+
+    // --- Сброс формы ---
+    function resetForm() {
+        currentPassengerId = null;
+        passengerForm.reset();
+        citizenshipSelect.selectedIndex = 0;
+        docTypeSelect.selectedIndex = 0;
+    }
+
+    // --- Получение CSRF токена ---
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // --- Загрузка справочников в select ---
+    async function loadCitizenships() {
+        try {
+            const res = await fetch('/api/citizenships/');
+            const data = await res.json();
+            citizenshipSelect.innerHTML = '<option value="">-- Выберите --</option>';
+            citizenshipsMap = {}; // ← очищаем старые данные
+
+            data.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name;
+                citizenshipSelect.appendChild(opt);
+                citizenshipsMap[c.id] = c.name;
+            });
+        } catch (err) {
+            console.error('Ошибка загрузки гражданств:', err);
+        }
+    }
+
+    async function loadDocTypes() {
+        try {
+            const res = await fetch('/api/doctypes/');
+            const data = await res.json();
+            docTypeSelect.innerHTML = '<option value="">-- Выберите --</option>';
+            docTypesMap = {}; // ← очищаем старые данные
+
+            data.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.textContent = `${d.name} (${d.pk_for_file})`;
+                docTypeSelect.appendChild(opt);
+                docTypesMap[d.id] = `${d.name} (${d.pk_for_file})`;
+            });
+        } catch (err) {
+            console.error('Ошибка загрузки типов документов:', err);
+        }
+    }
+
+    function fillFormFromPassenger(data) {
+        surnameInput.value = data.surname || '';
+        nameInput.value = data.name || '';
+        patronymicInput.value = data.patronymic || '';
+        birthdayInput.value = data.birthday ? data.birthday.split('T')[0] : '';
+        genderSelect.value = data.gender || '';
+        citizenshipSelect.value = data.citizenship || '';
+        docTypeSelect.value = data.doc_type || '';
+        docNumberInput.value = data.doc_number || '';
+        isActiveCheck.checked = data.is_active !== undefined ? data.is_active : true;
+
+        // Сбрасываем passengerId → чтобы создался новый пассажир
+        passengerIdInput.value = '';
+
+        // Очищаем сообщения об ошибках, если они были
+        document.querySelectorAll('.invalid-feedback').forEach(el => el.classList.remove('d-block'));
+    }
+
+    // --- Инициализация ---
+    loadCitizenships();
+    loadDocTypes();
+    copyPassengers();
+    loadPassengers();
+    setupSearchHandlers();
+    setupCopyHandlers();
+    setupCopyBtnHandlers();
+
+
+    // --- Клик вне формы ---
+    document.querySelector('#passengerModal .btn-close')?.addEventListener('click', resetForm);
+    document.querySelector('#passengerModal .btn-secondary')?.addEventListener('click', resetForm);
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const row = this.closest('tr');
+            const id = row.dataset.id;
+
+            try {
+                const res = await fetch(`/api/passengers/${id}/`);
+                if (!res.ok) throw new Error(`Пассажир не найден`);
+
+                const data = await res.json();
+
+                // Просто заполняем форму — не открываем модальное окно
+                fillFormFromPassenger(data);
+
+                // Опционально: скрываем результаты поиска
+                document.getElementById('searchResults').innerHTML = `
+                    <div class="alert alert-success">Данные загружены</div>
+                `;
+            } catch (err) {
+                console.error(err);
+                alert('Ошибка загрузки данных пассажира');
+            }
+        });
+    });
+
+});
+</script>
+{% endblock %}
