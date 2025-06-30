@@ -36,7 +36,9 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
-    'passenger.apps.PassengerConfig',
+    'api',
+    'passengers',
+    'rest_framework',
     'users.apps.UsersConfig',
     'core.apps.CoreConfig',
     'django.contrib.admin',

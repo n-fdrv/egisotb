@@ -1,0 +1,24 @@
+from django.contrib import admin
+from .models import Passenger, Citizenship, DocType
+
+@admin.register(Citizenship)
+class CitizenshipAdmin(admin.ModelAdmin):
+    list_display = ['name']
+    search_fields = ['name']
+
+
+@admin.register(DocType)
+class DocTypeAdmin(admin.ModelAdmin):
+    list_display = ['name', 'pk_for_file']
+    search_fields = ['name']
+
+
+@admin.register(Passenger)
+class PassengerAdmin(admin.ModelAdmin):
+    list_display = ['ticket_number', 'surname', 'name', 'patronymic_or_na', 'birthday', 'gender', 'citizenship', 'doc_type', 'doc_number']
+    search_fields = ['surname', 'name', 'doc_number']
+    list_filter = ['citizenship', 'doc_type', 'gender']
+
+    def patronymic_or_na(self, obj):
+        return obj.patronymic if obj.patronymic else 'NA'
+    patronymic_or_na.short_description = 'Отчество'
