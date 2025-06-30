@@ -15,7 +15,18 @@ class DocTypeAdmin(admin.ModelAdmin):
 
 @admin.register(Passenger)
 class PassengerAdmin(admin.ModelAdmin):
-    list_display = ['ticket_number', 'surname', 'name', 'patronymic_or_na', 'birthday', 'gender', 'citizenship', 'doc_type', 'doc_number']
+    list_display = [
+        'ticket_number',
+        'surname',
+        'name',
+        'patronymic_or_na',
+        'birthday',
+        'gender',
+        'citizenship',
+        'doc_type',
+        'doc_number',
+        'created_at'
+    ]
     search_fields = ['surname', 'name', 'doc_number']
     list_filter = ['citizenship', 'doc_type', 'gender']
 

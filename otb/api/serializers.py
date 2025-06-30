@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from passengers.models import Passenger, Citizenship, DocType
+from route.models import CrewMember, Ferry, Voyage
+
 
 class CitizenshipSerializer(serializers.ModelSerializer):
     class Meta:
@@ -35,3 +37,37 @@ class PassengerSerializer(serializers.ModelSerializer):
             'is_active'
         ]
         read_only_fields = ['created_at', 'created_by']
+
+
+class FerrySerializer(serializers.ModelSerializer):
+    flag = serializers.StringRelatedField()
+    ship_class = serializers.StringRelatedField()
+
+    class Meta:
+        model = Ferry
+        fields = ['id', 'name', 'registration_number', 'flag', 'ship_class']
+
+
+class CrewMemberSerializer(serializers.ModelSerializer):
+    citizenship = serializers.StringRelatedField()
+
+    class Meta:
+        model = CrewMember
+        fields = ['id', 'surname', 'name', 'patronymic', 'position', 'citizenship', 'passport_number', 'date_of_birth', 'gender']
+
+class VoyageSerializer(serializers.ModelSerializer):
+    ferry = FerrySerializer()
+    passengers = PassengerSerializer(many=True)
+    crew = CrewMemberSerializer(many=True)
+    passenger_count = serializers.SerializerMethodField()
+    crew_count = serializers.SerializerMethodField()
+
+    def get_passenger_count(self, obj):
+        return obj.passengers.count()
+
+    def get_crew_count(self, obj):
+        return obj.crew.count()
+
+    class Meta:
+        model = Voyage
+        fields = '__all__'

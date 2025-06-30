@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}Рейсы{% endblock %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h3>Расписание</h3>
+            <a href="#" class="btn btn-primary">Добавить рейс</a>
+        </div>
+    </div>
+    <!-- Фильтры -->
+    <div class="row g-2 mb-4">
+        <div class="col-md-3">
+            <label for="dateFilter" class="form-label">Дата отправления</label>
+            <input type="date" id="dateFilter" class="form-control">
+        </div>
+        <div class="col-md-3">
+            <label for="ferryFilter" class="form-label">Паром</label>
+            <select id="ferryFilter" class="form-select">
+                <option value="">Все паромы</option>
+                <!-- Паромы будут подгружаться через JS -->
+            </select>
+        </div>
+    </div>
+
+    <!-- Таблица -->
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th scope="col">№</th>
+                <th scope="col">Дата и время отправления</th>
+                <th scope="col">Паром</th>
+                <th scope="col">Маршрут</th>
+                <th scope="col">Кол-во экипажа</th>
+                <th scope="col">Кол-во пассажиров</th>
+                <th scope="col">Действия</th>
+            </tr>
+        </thead>
+        <tbody id="schedule-body">
+            <!-- Данные будут подгружаться через JS -->
+        </tbody>
+    </table>
+    <!-- Пагинация -->
+    <nav aria-label="Page navigation" id="pagination" style="display: none;">
+        <ul class="pagination justify-content-center"></ul>
+    </nav>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tbody = document.getElementById('schedule-body');
+    const ferryFilter = document.getElementById('ferryFilter');
+    const pagination = document.getElementById('pagination');
+    const dateFilter = document.getElementById('dateFilter');
+    const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+
+    // --- При инициализации ---
+    const today = getTodayDate();
+
+    if (dateFilter) {
+        dateFilter.value = today;
+    }
+
+    loadFerries(); // ← если есть
+    loadSchedules(); // ← грузим данные
+    let currentPage = 1;
+
+    function getTodayDate() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // --- Загрузка паромов в select ---
+    async function loadFerries() {
+        try {
+            const res = await fetch('/api/ferries/');
+            if (!res.ok) throw new Error('Ошибка загрузки паромов');
+            const data = await res.json();
+
+            ferryFilter.innerHTML = '<option value="">Все паромы</option>';
+            data.forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.textContent = `${f.name}`;
+                ferryFilter.appendChild(opt);
+            });
+        } catch (err) {
+            console.error(err);
+            ferryFilter.innerHTML = '<option disabled>Ошибка загрузки</option>';
+        }
+    }
+
+    // --- Загрузка рейсов с фильтрацией ---
+    async function loadSchedules(page = 1) {
+        const url = new URL('/api/schedules/', window.location.origin);
+        url.searchParams.set('page', page);
+
+        let date = dateFilter?.value.trim();
+
+        // Если дата не указана — поставим сегодняшнюю
+        if (!date) {
+            date = getTodayDate();
+            dateFilter.value = date;
+        }
+
+        const ferryId = ferryFilter?.value;
+
+        if (date) url.searchParams.set('departure_date', date);
+        if (ferryId) url.searchParams.set('ferry_id', ferryId);
+
+        console.log('Запрос:', url.toString());
+
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
+
+            const data = await res.json();
+
+            renderTable(data.results);
+            renderPagination(data.count, page, data.next ? page + 1 : null);
+        } catch (err) {
+            console.error(err);
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Ошибка загрузки данных</td></tr>';
+        }
+    }
+
+    // --- Отрисовка таблицы ---
+    function renderTable(schedules) {
+        tbody.innerHTML = '';
+
+        // Защита от undefined или null
+        if (!schedules || !Array.isArray(schedules) || schedules.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Нет данных</td></tr>';
+            return;
+        }
+
+        schedules.forEach(s => {
+            const tr = document.createElement('tr');
+            const ferryName = s.ferry ? s.ferry.name : 'Неизвестен';
+            tr.innerHTML = `
+                <td>${s.name}</td>
+                <td>${new Date(s.departure_date).toLocaleDateString()} ${s.departure_time}</td>
+                <td>${ferryName}</td>
+                <td>${s.departure_port} → ${s.arrival_port}</td>
+                <td>${s.crew_count || 0}</td>
+                <td>${s.passenger_count || 0}</td>
+                <td>
+                    <a href="#" class="btn btn-sm btn-success me-1"><img src="{% static 'svg/person-fill-add.svg' %}" width="20" height="20"></a>
+                    <a href="#" class="btn btn-sm btn-warning"><img src="{% static 'svg/download.svg' %}" width="20" height="20"></a>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // --- Пагинация ---
+    function renderPagination(total, current, next) {
+        pagination.style.display = total > 10 ? 'block' : 'none';
+        const ul = pagination.querySelector('.pagination');
+        ul.innerHTML = '';
+
+        if (current > 1) {
+            const prevLi = document.createElement('li');
+            prevLi.className = 'page-item';
+            prevLi.innerHTML = `<a class="page-link" href="#">«</a>`;
+            prevLi.addEventListener('click', e => {
+                e.preventDefault();
+                loadSchedules(current - 1);
+            });
+            ul.appendChild(prevLi);
+        }
+
+        for (let i = 1; i <= Math.ceil(total / 10); i++) {
+            const li = document.createElement('li');
+            li.className = 'page-item' + (i === current ? ' active' : '');
+            li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+            li.addEventListener('click', e => {
+                e.preventDefault();
+                loadSchedules(i);
+            });
+            ul.appendChild(li);
+        }
+
+        if (next) {
+            const nextLi = document.createElement('li');
+            nextLi.className = 'page-item';
+            nextLi.innerHTML = `<a class="page-link" href="#">»</a>`;
+            nextLi.addEventListener('click', e => {
+                e.preventDefault();
+                loadSchedules(next);
+            });
+            ul.appendChild(nextLi);
+        }
+    }
+
+    // --- Инициализация ---
+    loadFerries(); // ← загружаем паромы
+    loadSchedules(); // ← первый запрос без фильтров
+
+    // --- Обработчики событий ---
+    applyFiltersBtn?.addEventListener('click', () => {
+        currentPage = 1;
+        loadSchedules(currentPage);
+    });
+
+    dateFilter?.addEventListener('change', () => {
+        currentPage = 1;
+        loadSchedules(currentPage);
+    });
+
+    ferryFilter?.addEventListener('change', () => {
+        currentPage = 1;
+        loadSchedules(currentPage);
+    });
+
+
+});
+</script>
+{% endblock %}

@@ -23,6 +23,7 @@ from django.views.generic import TemplateView
 urlpatterns = [
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
     path('passengers/', TemplateView.as_view(template_name='passengers/passenger_list.html'), name='passenger_list'),
+    path('route/', TemplateView.as_view(template_name='voyage_list.html'), name='voyage_list'),
     path('accounts/login/', TemplateView.as_view(template_name='stub.html'), name='login'),
     path('accounts/register/', TemplateView.as_view(template_name='stub.html'), name='register'),
     path('accounts/logout/', TemplateView.as_view(template_name='stub.html'), name='logout'),

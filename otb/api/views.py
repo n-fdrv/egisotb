@@ -3,9 +3,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from passengers.models import Passenger
-from api.serializers import PassengerSerializer
+from api.serializers import PassengerSerializer, VoyageSerializer, FerrySerializer
 from django.contrib.auth import get_user_model
 
+from route.models import Voyage, Ferry
 from .pagination import StandardResultsSetPagination
 from .serializers import CitizenshipSerializer, DocTypeSerializer
 from passengers.models import Citizenship, DocType
@@ -105,3 +106,37 @@ def get_last_ticket(request):
     last_passenger = Passenger.objects.order_by('-id').first()
     last_ticket = last_passenger.ticket_number if last_passenger else 1000
     return Response({'last_ticket': last_ticket})
+
+
+@api_view(['GET'])
+def voyage_list(request):
+    voyages = Voyage.objects.all()
+
+    departure_date = request.GET.get('departure_date')
+    ferry_id = request.GET.get('ferry_id')
+
+    if departure_date:
+        voyages = voyages.filter(departure_date__icontains=departure_date)
+    if ferry_id:
+        voyages = voyages.filter(ferry__id__icontains=ferry_id)
+
+    paginator = StandardResultsSetPagination()
+    result_page = paginator.paginate_queryset(voyages, request)
+
+    serializer = VoyageSerializer(result_page, many=True)
+    return paginator.get_paginated_response(serializer.data)
+
+@api_view(['GET'])
+def voyage_detail(request, pk):
+    try:
+        voyage = Voyage.objects.get(pk=pk)
+        serializer = VoyageSerializer(voyage)
+        return Response(serializer.data)
+    except Voyage.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['GET'])
+def ferries_list(request):
+    ferries = Ferry.objects.all()
+    serializer = FerrySerializer(ferries, many=True)
+    return Response(serializer.data)
