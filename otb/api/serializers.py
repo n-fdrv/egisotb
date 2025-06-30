@@ -56,9 +56,17 @@ class CrewMemberSerializer(serializers.ModelSerializer):
         fields = ['id', 'surname', 'name', 'patronymic', 'position', 'citizenship', 'passport_number', 'date_of_birth', 'gender']
 
 class VoyageSerializer(serializers.ModelSerializer):
-    ferry = FerrySerializer()
-    passengers = PassengerSerializer(many=True)
-    crew = CrewMemberSerializer(many=True)
+    ferry = FerrySerializer(read_only=True)
+    passengers = serializers.PrimaryKeyRelatedField(
+        queryset=Passenger.objects.all(),
+        many=True,
+        required=False
+    )
+    crew = serializers.PrimaryKeyRelatedField(
+        queryset=CrewMember.objects.all(),
+        many=True,
+        required=False
+    )
     passenger_count = serializers.SerializerMethodField()
     crew_count = serializers.SerializerMethodField()
 

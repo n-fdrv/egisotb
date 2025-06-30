@@ -108,23 +108,31 @@ def get_last_ticket(request):
     return Response({'last_ticket': last_ticket})
 
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def voyage_list(request):
-    voyages = Voyage.objects.all()
+    if request.method == 'GET':
+        voyages = Voyage.objects.all()
 
-    departure_date = request.GET.get('departure_date')
-    ferry_id = request.GET.get('ferry_id')
+        departure_date = request.GET.get('departure_date')
+        ferry_id = request.GET.get('ferry_id')
 
-    if departure_date:
-        voyages = voyages.filter(departure_date__icontains=departure_date)
-    if ferry_id:
-        voyages = voyages.filter(ferry__id__icontains=ferry_id)
+        if departure_date:
+            voyages = voyages.filter(departure_date__icontains=departure_date)
+        if ferry_id:
+            voyages = voyages.filter(ferry__id__icontains=ferry_id)
 
-    paginator = StandardResultsSetPagination()
-    result_page = paginator.paginate_queryset(voyages, request)
+        paginator = StandardResultsSetPagination()
+        result_page = paginator.paginate_queryset(voyages, request)
 
-    serializer = VoyageSerializer(result_page, many=True)
-    return paginator.get_paginated_response(serializer.data)
+        serializer = VoyageSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+    serializer = VoyageSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['GET'])
 def voyage_detail(request, pk):
@@ -140,3 +148,17 @@ def ferries_list(request):
     ferries = Ferry.objects.all()
     serializer = FerrySerializer(ferries, many=True)
     return Response(serializer.data)
+
+
+@api_view(['POST'])
+def bulk_create_schedules(request):
+    schedules = request.data.get('schedules', [])
+    created = []
+    for item in schedules:
+        serializer = VoyageSerializer(data=item)
+        if serializer.is_valid():
+            serializer.save()
+            created.append(serializer.data)
+        else:
+            print(serializer.errors)
+    return Response(created, status=status.HTTP_201_CREATED)

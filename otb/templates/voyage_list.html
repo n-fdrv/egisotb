@@ -7,7 +7,9 @@
     <div class="row mb-4">
         <div class="col-12 d-flex justify-content-between align-items-center">
             <h3>Расписание</h3>
-            <a href="#" class="btn btn-primary">Добавить рейс</a>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#scheduleModal">
+              Добавить расписание
+            </button>
         </div>
     </div>
     <!-- Фильтры -->
@@ -46,6 +48,72 @@
     <nav aria-label="Page navigation" id="pagination" style="display: none;">
         <ul class="pagination justify-content-center"></ul>
     </nav>
+    <!-- Блок "Генерация расписания" -->
+<!-- Модальное окно -->
+<div class="modal fade" id="scheduleModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Добавить рейс</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="scheduleForm" class="needs-validation" novalidate>
+                <input type="hidden" id="scheduleId">
+
+                <div class="modal-body">
+                    <div class="col-md-6">
+                        <h5>Автогенерация</h5>
+                        <div class="mb-3">
+                            <label for="routeNameInput" class="form-label">Название рейса</label>
+                            <input type="text" class="form-control" id="routeNameInput" placeholder="Например: Рейс 101">
+                        </div>
+                        <div class="mb-3">
+                            <label for="departurePortInput" class="form-label">Порт отправления</label>
+                            <input type="text" class="form-control" id="departurePortInput" placeholder="Москва">
+                        </div>
+                        <div class="mb-3">
+                            <label for="arrivalPortInput" class="form-label">Порт прибытия</label>
+                            <input type="text" class="form-control" id="arrivalPortInput" placeholder="Санкт-Петербург">
+                        </div>
+                        <div class="mb-3">
+                                <label for="routeTypeSelect" class="form-label">Тип маршрута</label>
+                                <select id="routeTypeSelect" class="form-select" required>
+                                    <option value="">Выберите тип маршрута</option>
+                                    <option value="0">Беспересадочный</option>
+                                    <option value="1">Транзитный</option>
+                                </select>
+                                <div class="invalid-feedback">Выберите тип маршрута</div>
+                            </div>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label for="departureTimeInput" class="form-label">Время отправления</label>
+                                <input type="time" id="departureTimeInput" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="arrivalTimeInput" class="form-label">Время прибытия</label>
+                                <input type="time" id="arrivalTimeInput" class="form-control">
+                            </div>
+                        </div>
+                        <div class="row g-2 mt-2">
+                            <div class="col-md-6">
+                                <label for="startDateInput" class="form-label">Дата начала</label>
+                                <input type="date" id="startDateInput" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="endDateInput" class="form-label">Дата окончания</label>
+                                <input type="date" id="endDateInput" class="form-control">
+                            </div>
+                        </div>
+                        <button id="generateScheduleBtn" type="button" class="btn btn-outline-primary mt-3 w-100">Сгенерировать расписание</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -57,6 +125,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const pagination = document.getElementById('pagination');
     const dateFilter = document.getElementById('dateFilter');
     const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+    const routeNameInput = document.getElementById('routeNameInput');
+    const departurePortInput = document.getElementById('departurePortInput');
+    const arrivalPortInput = document.getElementById('arrivalPortInput');
+    const departureTimeInput = document.getElementById('departureTimeInput');
+    const arrivalTimeInput = document.getElementById('arrivalTimeInput');
+    const startDateInput = document.getElementById('startDateInput');
+    const endDateInput = document.getElementById('endDateInput');
+    const routeTypeSelect = document.getElementById('routeTypeSelect');
+    const generateScheduleBtn = document.getElementById('generateScheduleBtn');
+
 
     // --- При инициализации ---
     const today = getTodayDate();
@@ -76,6 +154,143 @@ document.addEventListener('DOMContentLoaded', function () {
         const day = String(today.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     }
+
+
+
+    async function loadRouteTypes() {
+        try {
+            const res = await fetch('/api/routetypes/');
+            if (!res.ok) throw new Error('Ошибка загрузки маршрутов');
+            const data = await res.json();
+            routeTypeSelect.innerHTML = '<option value="">Выберите маршрут</option>';
+            data.forEach(rt => {
+                const opt = document.createElement('option');
+                opt.value = rt.id;
+                opt.textContent = rt.name;
+                routeTypeSelect.appendChild(opt);
+            });
+        } catch (err) {
+            console.error(err);
+            routeTypeSelect.innerHTML = '<option disabled>Ошибка загрузки</option>';
+        }
+    }
+
+    function getDatesBetween(startDate, endDate) {
+        const dates = [];
+        let currentDate = new Date(startDate);
+
+        while (currentDate <= endDate) {
+            dates.push(new Date(currentDate));
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        return dates;
+    }
+
+    async function createSchedule(scheduleData) {
+        try {
+            const res = await fetch('/api/schedules/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(scheduleData)
+            });
+
+            if (!res.ok) {
+                const errData = await res.json(); // ← получаем детали ошибки
+                console.error('Ошибка валидации:', errData); // ← смотри в консоль
+                alert('Ошибка при создании рейса. Смотрите консоль для деталей.');
+                return null;
+            }
+
+            const data = await res.json();
+            return data;
+        } catch (err) {
+            console.error('Ошибка сети:', err);
+            alert('Ошибка сети');
+            return null;
+        }
+    }
+
+    generateScheduleBtn?.addEventListener('click', async () => {
+        const name = routeNameInput.value.trim();
+        const departurePort = departurePortInput.value.trim();
+        const arrivalPort = arrivalPortInput.value.trim();
+        const departureTime = departureTimeInput.value;
+        const arrivalTime = arrivalTimeInput.value;
+        const startDate = new Date(startDateInput.value);
+        const endDate = new Date(endDateInput.value);
+        const routeTypeId = routeTypeSelect.value;
+
+        if (!name || !departurePort || !arrivalPort || !departureTime || !arrivalTime || !startDateInput.value || !endDateInput.value  || !routeTypeId) {
+            alert('⚠️ Заполните все поля');
+            return;
+        }
+
+        if (startDate > endDate) {
+            alert('📅 Дата окончания не может быть раньше даты начала');
+            return;
+        }
+
+        const dateList = getDatesBetween(startDate, endDate);
+        let createdCount = 0;
+
+        for (let d of dateList) {
+            const scheduleData = {
+                name,
+                departure_date: d.toISOString().split('T')[0],
+                departure_time: departureTime,
+                arrival_date: d.toISOString().split('T')[0], // ← +1 день
+                arrival_time: arrivalTime,
+                departure_port: departurePort,
+                arrival_port: arrivalPort,
+
+                route_type: parseInt(routeTypeId),
+            };
+
+            try {
+                const res = await fetch('/api/schedules/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(scheduleData)
+                });
+
+                if (!res.ok) {
+                    const errData = await res.json(); // ← получаем детали ошибки
+                    console.error(`❌ Ошибка на дате ${scheduleData.departure_date}:`, errData);
+
+                    if (res.status === 400 && errData.ferry) {
+                        alert('Ошибка валидации: неверный паром');
+                    } else if (res.status === 400 && errData.route_type) {
+                        alert('Ошибка валидации: неверный тип маршрута');
+                    } else {
+                        alert(`Ошибка сохранения рейса на ${scheduleData.departure_date}`);
+                    }
+
+                    continue; // ← пропускаем этот рейс, продолжаем дальше
+                }
+
+                const result = await res.json();
+                createdCount++;
+                console.log(`✅ Рейс создан:`, result);
+
+            } catch (err) {
+                console.error('Сеть сломалась:', err);
+                alert('Ошибка сети при создании рейсов');
+                break;
+            }
+        }
+
+        alert(`✅ Успешно создано ${createdCount} из ${dateList.length} рейсов`);
+        loadSchedules(); // ← обновляем таблицу
+    });
 
     // --- Загрузка паромов в select ---
     async function loadFerries() {
@@ -198,6 +413,22 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             ul.appendChild(nextLi);
         }
+    }
+
+    // --- Получение CSRF токена ---
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
     }
 
     // --- Инициализация ---
