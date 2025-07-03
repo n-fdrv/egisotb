@@ -58,3 +58,25 @@ body {
 .clickable-rows tr {
     cursor: pointer;
 }
+
+.tab-content.d-none {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+tr.passenger-row:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+
+.pagination .page-link {
+    cursor: pointer;
+}
+
+.pagination .active .page-link {
+    background-color: #0d6efd;
+    color: white;
+}

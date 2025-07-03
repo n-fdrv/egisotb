@@ -341,8 +341,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const data = await res.json();
 
-            renderTable(data.results);
-            renderPagination(data.count, page, data.next ? page + 1 : null);
+            renderTable(data);
             setupRowClickHandlers();
         } catch (err) {
             console.error(err);

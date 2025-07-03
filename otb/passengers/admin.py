@@ -28,7 +28,7 @@ class PassengerAdmin(admin.ModelAdmin):
         'created_at'
     ]
     search_fields = ['surname', 'name', 'doc_number']
-    list_filter = ['citizenship', 'doc_type', 'gender']
+    list_filter = ['is_active', 'citizenship', 'doc_type', 'gender']
 
     def patronymic_or_na(self, obj):
         return obj.patronymic if obj.patronymic else 'NA'

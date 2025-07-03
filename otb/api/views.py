@@ -1,13 +1,16 @@
+from django.http import JsonResponse
+from django.views import View
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.utils import json
+
 from passengers.models import Passenger
 from api.serializers import PassengerSerializer, VoyageSerializer, FerrySerializer, CrewMemberSerializer
 from django.contrib.auth import get_user_model
 
 from route.models import Voyage, Ferry, CrewMember
-from .pagination import StandardResultsSetPagination
 from .serializers import CitizenshipSerializer, DocTypeSerializer
 from passengers.models import Citizenship, DocType
 
@@ -40,11 +43,10 @@ def passenger_list(request):
         if limit:
             passengers = passengers[:int(limit)]
 
-        paginator = StandardResultsSetPagination()
-        result_page = paginator.paginate_queryset(passengers, request)
 
-        serializer = PassengerSerializer(result_page, many=True)
-        return paginator.get_paginated_response(serializer.data)
+
+        serializer = PassengerSerializer(passengers, many=True)
+        return Response(serializer.data)
 
     elif request.method == 'POST':
         data = request.data.copy()
@@ -121,11 +123,10 @@ def voyage_list(request):
         if ferry_id:
             voyages = voyages.filter(ferry__id__icontains=ferry_id)
 
-        paginator = StandardResultsSetPagination()
-        result_page = paginator.paginate_queryset(voyages, request)
 
-        serializer = VoyageSerializer(result_page, many=True)
-        return paginator.get_paginated_response(serializer.data)
+
+        serializer = VoyageSerializer(voyages, many=True)
+        return Response(serializer.data)
 
     serializer = VoyageSerializer(data=request.data)
     if serializer.is_valid():
@@ -146,15 +147,26 @@ def voyage_detail(request, pk):
         return Response(serializer.data)
 
     elif request.method == 'PUT':
-        serializer = VoyageSerializer(voyage, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            schedule = Voyage.objects.get(pk=pk)
+        except Voyage.DoesNotExist:
+            return Response(status=404)
+
+        passenger_ids = request.data.get('passengers', [])
+        passengers = Passenger.objects.filter(id__in=passenger_ids)
+
+        schedule.passengers.set(passengers)
+
+        for p in passengers:
+            p.is_active = False
+            p.save()
+
+        return Response({'detail': 'Данные обновлены'})
     return None
 
+
 @api_view(['GET'])
-def voyage_passengers(request, pk):
+def schedule_passengers(request, pk):
     try:
         schedule = Voyage.objects.get(pk=pk)
         passengers = schedule.passengers.all()
@@ -225,11 +237,10 @@ def crew_list(request):
             if limit:
                 crew = crew[:int(limit)]
 
-            paginator = StandardResultsSetPagination()
-            result_page = paginator.paginate_queryset(crew, request)
 
-            serializer = CrewMemberSerializer(result_page, many=True)
-            return paginator.get_paginated_response(serializer.data)
+
+            serializer = CrewMemberSerializer(crew, many=True)
+            return Response(serializer.data)
 
     elif request.method == 'POST':
         serializer = CrewMemberSerializer(data=request.data)
@@ -260,3 +271,40 @@ def crew_detail(request, pk):
     elif request.method == 'DELETE':
         member.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['POST'])
+def add_passenger_to_schedule(request, pk):
+    try:
+        schedule = Voyage.objects.get(pk=pk)
+        passenger_id = request.data.get('passenger_id')
+
+        if not passenger_id:
+            return Response({'error': 'Не передан ID пассажира'}, status=400)
+
+        passenger = Passenger.objects.get(pk=passenger_id)
+        schedule.passengers.add(passenger)
+        passenger.is_active = False
+        passenger.save()
+
+        return Response({'detail': 'Пассажир добавлен'})
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)
+
+@api_view(['POST'])
+def remove_passenger_from_schedule(request, pk):
+    try:
+        schedule = Voyage.objects.get(pk=pk)
+        passenger_id = request.data.get('passenger_id')
+
+        if not passenger_id:
+            return Response({'error': 'Не передан ID пассажира'}, status=400)
+
+        passenger = Passenger.objects.get(pk=passenger_id)
+        schedule.passengers.remove(passenger)
+
+        passenger.is_active = True
+        passenger.save()
+
+        return Response({'detail': 'Пассажир удалён'})
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)

@@ -241,8 +241,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const res = await fetch(url);
             if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
             const data = await res.json();
-            renderTable(data.results);
-            renderPagination(data.count, page, data.next ? page + 1 : null);
+            renderTable(data);
         } catch (err) {
             console.error(err);
             tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Ошибка загрузки</td></tr>';
