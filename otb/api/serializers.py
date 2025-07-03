@@ -49,11 +49,25 @@ class FerrySerializer(serializers.ModelSerializer):
 
 
 class CrewMemberSerializer(serializers.ModelSerializer):
-    citizenship = serializers.StringRelatedField()
+    citizenship = serializers.PrimaryKeyRelatedField(queryset=Citizenship.objects.all())
+    doc_type = serializers.PrimaryKeyRelatedField(queryset=DocType.objects.all())
+    ferry = serializers.PrimaryKeyRelatedField(queryset=Ferry.objects.all())
+
 
     class Meta:
         model = CrewMember
-        fields = ['id', 'surname', 'name', 'patronymic', 'position', 'citizenship', 'passport_number', 'date_of_birth', 'gender']
+        fields = ['id',
+                  'surname',
+                  'name',
+                  'patronymic',
+                  'birthday',
+                  'rank',
+                  'citizenship',
+                  'doc_type',
+                  'doc_number',
+                  'gender',
+                  'ferry',
+                  'is_active']
 
 class VoyageSerializer(serializers.ModelSerializer):
     ferry = FerrySerializer(read_only=True)

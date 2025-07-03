@@ -3,10 +3,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from passengers.models import Passenger
-from api.serializers import PassengerSerializer, VoyageSerializer, FerrySerializer
+from api.serializers import PassengerSerializer, VoyageSerializer, FerrySerializer, CrewMemberSerializer
 from django.contrib.auth import get_user_model
 
-from route.models import Voyage, Ferry
+from route.models import Voyage, Ferry, CrewMember
 from .pagination import StandardResultsSetPagination
 from .serializers import CitizenshipSerializer, DocTypeSerializer
 from passengers.models import Citizenship, DocType
@@ -162,3 +162,69 @@ def bulk_create_schedules(request):
         else:
             print(serializer.errors)
     return Response(created, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET', 'POST'])
+def crew_list(request):
+    if request.method == 'GET':
+        if request.method == 'GET':
+            crew = CrewMember.objects.all().order_by('-id')
+
+            surname = request.GET.get('surname')
+            name = request.GET.get('name')
+            doc_number = request.GET.get('doc_number')
+            rank = request.GET.get('rank')
+            ferry = request.GET.get('ferry')
+            is_active = request.GET.get('is_active')
+            limit = request.GET.get('limit')
+
+            if surname:
+                crew = crew.filter(surname__icontains=surname)
+            if name:
+                crew = crew.filter(name__icontains=name)
+            if doc_number:
+                crew = crew.filter(doc_number__icontains=doc_number)
+            if rank:
+                crew = crew.filter(rank__icontains=rank)
+            if ferry:
+                crew = crew.filter(ferry__id=ferry)
+            if is_active is not None and is_active != '':
+                crew = crew.filter(is_active=(is_active == 'true'))
+            if limit:
+                crew = crew[:int(limit)]
+
+            paginator = StandardResultsSetPagination()
+            result_page = paginator.paginate_queryset(crew, request)
+
+            serializer = CrewMemberSerializer(result_page, many=True)
+            return paginator.get_paginated_response(serializer.data)
+
+    elif request.method == 'POST':
+        serializer = CrewMemberSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+def crew_detail(request, pk):
+    try:
+        member = CrewMember.objects.get(pk=pk)
+    except CrewMember.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = CrewMemberSerializer(member)
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = CrewMemberSerializer(member, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        member.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

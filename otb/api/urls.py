@@ -10,5 +10,7 @@ urlpatterns = [
     path('schedules/', views.voyage_list),
     path('schedules/<int:pk>/', views.voyage_detail),
     path('ferries/', views.ferries_list),
-    path('api/schedules/bulk/', views.bulk_create_schedules),
+    path('schedules/bulk/', views.bulk_create_schedules),
+    path('crew/', views.crew_list),
+    path('crew/<int:pk>/', views.crew_detail),
 ]

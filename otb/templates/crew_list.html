@@ -1,0 +1,609 @@
+{% extends "base.html" %}
+{% block title %}Экипаж{% endblock %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Члены экипажа</h3>
+        <button class="btn btn-primary" id="addCrewBtn">Добавить члена экипажа</button>
+    </div>
+
+    <!-- Поисковая строка -->
+    <div class="row g-2 mb-4">
+        <div class="col-md-4">
+            <input type="text" id="searchSurname" class="form-control" placeholder="Фамилия">
+        </div>
+        <div class="col-md-4">
+            <input type="text" id="searchPassport" class="form-control" placeholder="Номер паспорта">
+        </div>
+        <div class="col-md-4">
+            <input type="text" id="searchPosition" class="form-control" placeholder="Должность">
+        </div>
+    </div>
+
+    <!-- Фильтр активности -->
+    <div class="mb-4 d-flex align-items-center gap-3">
+        <label for="activeFilter" class="fw-bold mb-0">Показывать:</label>
+        <select id="activeFilter" class="form-select w-auto">
+            <option value="true">На смене</option>
+            <option value="false">Выходные</option>
+            <option value="">Все</option>
+        </select>
+        <label for="ferryFilter" class="fw-bold mb-0">Паром:</label>
+        <select id="ferryFilter" class="form-select w-auto">
+        </select>
+    </div>
+    <!-- Таблица -->
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th scope="col">Фамилия</th>
+                <th scope="col">Имя</th>
+                <th scope="col">Отчество</th>
+                <th scope="col">Должность</th>
+                <th scope="col">Гражданство</th>
+                <th scope="col">Номер паспорта</th>
+                <th scope="col">Дата рождения</th>
+                <th scope="col">Пол</th>
+                <th scope="col">На смене</th>
+                <th scope="col">Действия</th>
+            </tr>
+        </thead>
+        <tbody id="crew-body">
+            <!-- Сюда будут подгружаться данные -->
+        </tbody>
+    </table>
+
+    <!-- Пагинация -->
+    <nav aria-label="Page navigation" id="pagination" style="display: none;">
+        <ul class="pagination justify-content-center"></ul>
+    </nav>
+</div>
+
+<!-- Модальное окно -->
+<div class="modal fade" id="crewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="crewModalLabel">Добавить члена экипажа</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="crewForm" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <input type="hidden" id="crewId">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <!-- Левая колонка -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="surnameInput" class="form-label">Фамилия</label>
+                                <input type="text" class="form-control" id="surnameInput" required>
+                                <div class="invalid-feedback">Введите фамилию</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="nameInput" class="form-label">Имя</label>
+                                <input type="text" class="form-control" id="nameInput" required>
+                                <div class="invalid-feedback">Введите имя</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="patronymicInput" class="form-label">Отчество</label>
+                                <input type="text" class="form-control" id="patronymicInput">
+                            </div>
+                            <div class="mb-3">
+                                <label for="birthdayInput" class="form-label">Дата рождения</label>
+                                <input type="date" class="form-control" id="birthdayInput" required>
+                                <div class="invalid-feedback">Выберите дату</div>
+                              </div>
+                            <div class="mb-3">
+                                <label for="genderSelect" class="form-label">Пол</label>
+                                <select class="form-select" id="genderSelect" required>
+                                  <option value="">Выберите пол</option>
+                                  <option value="M">Мужской</option>
+                                  <option value="F">Женский</option>
+                                </select>
+                                <div class="invalid-feedback">Выберите пол</div>
+                              </div>
+                        </div>
+
+                        <!-- Правая колонка -->
+                        <!-- В правой колонке -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="citizenshipSelect" class="form-label">Гражданство</label>
+                                <select class="form-select" id="citizenshipSelect" required>
+                                    <option value="">Выберите гражданство</option>
+                                </select>
+                                <div class="invalid-feedback">Выберите гражданство</div>
+                            </div>
+
+                            <!-- Новый: тип документа -->
+                            <div class="mb-3">
+                                <label for="docTypeSelect" class="form-label">Тип документа</label>
+                                <select class="form-select" id="docTypeSelect" required>
+                                    <option value="">Выберите тип документа</option>
+                                </select>
+                                <div class="invalid-feedback">Выберите тип документа</div>
+                            </div>
+
+                            <!-- Новый: номер документа -->
+                            <div class="mb-3">
+                                <label for="passportNumberInput" class="form-label">Номер документа</label>
+                                <input type="text" class="form-control" id="passportNumberInput" required>
+                                <div class="invalid-feedback">Введите номер документа</div>
+                            </div>
+
+                            <!-- Новый: паром -->
+                            <div class="mb-3">
+                                <label for="ferrySelect" class="form-label">Паром</label>
+                                <select class="form-select" id="ferrySelect" required>
+                                    <option value="">Выберите паром</option>
+                                </select>
+                                <div class="invalid-feedback">Выберите паром</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="positionInput" class="form-label">Должность</label>
+                                <input type="text" class="form-control" id="positionInput" required>
+                                <div class="invalid-feedback">Введите должность</div>
+                            </div>
+                              <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="isActiveCheck" checked>
+                                <label class="form-check-label" for="isActiveCheck">На смене</label>
+                              </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    <button type="button" id="deleteCrewBtn" class="btn btn-danger me-auto d-none">Удалить</button>
+                    <button type="submit" class="btn btn-primary" id="saveCrewBtn">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    Promise.all([
+            new Promise(resolve => {
+                loadCitizenships();
+                resolve();
+            }),
+            new Promise(resolve => {
+                loadDocTypes();
+                resolve();
+            }),
+            new Promise(resolve => {
+                loadFerries();
+                resolve();
+            }),
+            new Promise(resolve => {
+                loadFilterFerries();
+                resolve();
+            })
+        ]).then(() => {
+            // Теперь справочники точно загружены
+            loadCrew();
+            setupSearchHandlers();
+        });
+    const tbody = document.getElementById('crew-body');
+    const pagination = document.getElementById('pagination');
+    const searchSurname = document.getElementById('searchSurname');
+    const searchPassport = document.getElementById('searchPassport');
+    const searchPosition = document.getElementById('searchPosition');
+    const activeFilter = document.getElementById('activeFilter');
+    const ferryFilter = document.getElementById('ferryFilter');
+
+    const crewModal = new bootstrap.Modal(document.getElementById('crewModal'));
+    const crewForm = document.getElementById('crewForm');
+    const crewIdInput = document.getElementById('crewId');
+    const surnameInput = document.getElementById('surnameInput');
+    const nameInput = document.getElementById('nameInput');
+    const patronymicInput = document.getElementById('patronymicInput');
+    const positionInput = document.getElementById('positionInput');
+    const passportNumberInput = document.getElementById('passportNumberInput');
+    const dateOfBirthInput = document.getElementById('birthdayInput');
+    const genderSelect = document.getElementById('genderSelect');
+    const citizenshipSelect = document.getElementById('citizenshipSelect');
+    const ferrySelect = document.getElementById('ferrySelect');
+    const docTypeSelect = document.getElementById('docTypeSelect');
+    const isActiveCheck = document.getElementById('isActiveCheck');
+    const deleteCrewBtn = document.getElementById('deleteCrewBtn');
+    const saveCrewBtn = document.getElementById('saveCrewBtn');
+
+    let currentCrewId = null;
+    let citizenshipsMap = {};
+    let ferriesMap = {};
+    let docTypesMap = {};
+
+    // --- Загрузка данных ---
+    async function loadCrew(page = 1) {
+        const url = new URL('/api/crew/', window.location.origin);
+        url.searchParams.set('page', page);
+
+        const surname = searchSurname?.value.trim();
+        const passport = searchPassport?.value.trim();
+        const position = searchPosition?.value.trim();
+        const isActive = activeFilter?.value;
+        const ferry = ferryFilter?.value.trim();
+
+        if (surname) url.searchParams.set('surname', surname);
+        if (passport) url.searchParams.set('doc_number', passport);
+        if (position) url.searchParams.set('rank', position);
+        if (isActive !== '') url.searchParams.set('is_active', isActive);
+        if (ferry) url.searchParams.set('ferry', ferry);
+
+        console.log('🔍 Запрос:', url.toString());
+
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
+            const data = await res.json();
+            renderTable(data.results);
+            renderPagination(data.count, page, data.next ? page + 1 : null);
+        } catch (err) {
+            console.error(err);
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Ошибка загрузки</td></tr>';
+        }
+    }
+
+    // --- Отрисовка таблицы ---
+    function renderTable(members) {
+        tbody.innerHTML = '';
+        if (!members.length) {
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">Нет данных</td></tr>';
+            return;
+        }
+
+        members.forEach(m => {
+            const tr = document.createElement('tr');
+            tr.dataset.id = m.id;
+            tr.innerHTML = `
+                <td>${m.surname}</td>
+                <td>${m.name}</td>
+                <td>${m.patronymic || 'NA'}</td>
+                <td>${m.rank}</td>
+                <td>${citizenshipsMap[m.citizenship] || 'Ошибка загрузки'}</td>
+                <td>${docTypesMap[m.doc_type] || 'Ошибка загрузки'}</td>
+                <td>${new Date(m.birthday).toLocaleDateString()}</td>
+                <td>${m.gender === 'M' ? 'Мужской' : 'Женский'}</td>
+                <td>${m.is_active ? 'Да' : 'Нет'}</td>
+                <td>
+                    <button class="btn btn-sm btn-warning edit-btn me-1">
+                        <img src="{% static 'svg/pencil.svg' %}" width="20" height="20">
+                    </button>
+                    <button class="btn btn-sm btn-danger delete-btn">
+                        <img src="{% static 'svg/trash.svg' %}" width="20" height="20">
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        setupRowHandlers();
+    }
+
+    // --- Пагинация ---
+    function renderPagination(total, current, next) {
+        pagination.style.display = total > 10 ? 'block' : 'none';
+        const ul = pagination.querySelector('.pagination');
+        ul.innerHTML = '';
+
+        if (current > 1) {
+            const prevLi = document.createElement('li');
+            prevLi.className = 'page-item';
+            prevLi.innerHTML = `<a class="page-link" href="#">«</a>`;
+            prevLi.addEventListener('click', e => {
+                e.preventDefault();
+                loadCrew(current - 1);
+            });
+            ul.appendChild(prevLi);
+        }
+
+        const totalPages = Math.ceil(total / 10);
+        for (let i = 1; i <= totalPages; i++) {
+            const li = document.createElement('li');
+            li.className = 'page-item' + (i === current ? ' active' : '');
+            li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+            li.addEventListener('click', e => {
+                e.preventDefault();
+                loadCrew(i);
+            });
+            ul.appendChild(li);
+        }
+
+        if (next) {
+            const nextLi = document.createElement('li');
+            nextLi.className = 'page-item';
+            nextLi.innerHTML = `<a class="page-link" href="#">»</a>`;
+            nextLi.addEventListener('click', e => {
+                e.preventDefault();
+                loadCrew(next);
+            });
+            ul.appendChild(nextLi);
+        }
+    }
+
+    // --- Обработчики строк ---
+    function setupRowHandlers() {
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const row = this.closest('tr');
+                const id = row.dataset.id;
+                openEditCrew(id);
+            });
+        });
+
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const row = this.closest('tr');
+                const id = row.dataset.id;
+                if (confirm('Вы уверены?')) {
+                    deleteCrew(id);
+                }
+            });
+        });
+    }
+
+    // --- Открытие формы редактирования ---
+    async function openEditCrew(id) {
+        try {
+            const res = await fetch(`/api/crew/${id}/`);
+            const data = await res.json();
+
+            currentCrewId = id;
+            surnameInput.value = data.surname;
+            nameInput.value = data.name;
+            patronymicInput.value = data.patronymic || '';
+            positionInput.value = data.rank;
+            passportNumberInput.value = data.doc_number;
+            dateOfBirthInput.value = data.birthday.split('T')[0];
+            genderSelect.value = data.gender;
+            citizenshipSelect.value = data.citizenship;
+            docTypeSelect.value = data.doc_type;
+            ferrySelect.value = data.ferry;
+            isActiveCheck.checked = data.is_active;
+
+            console.log('Гражданство:', data.citizenship);
+            console.log('Вид документа:', data.doc_type);
+
+            document.getElementById('crewModalLabel').textContent = 'Редактировать члена экипажа';
+            deleteCrewBtn.classList.remove('d-none');
+            saveCrewBtn.textContent = 'Обновить';
+
+
+            crewModal.show();
+        } catch (err) {
+            alert('Ошибка загрузки данных');
+            console.error(err);
+        }
+    }
+
+    // --- Удаление члена экипажа ---
+    async function deleteCrew(id) {
+        try {
+            const res = await fetch(`/api/crew/${id}/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (res.ok) {
+                alert('Член экипажа удалён');
+                loadCrew();
+            } else {
+                alert('Ошибка удаления');
+                console.error(await res.json());
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Ошибка сети');
+        }
+    }
+
+    // --- Сохранение члена экипажа ---
+    crewForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const isEditMode = !!currentCrewId;
+        const url = isEditMode ? `/api/crew/${currentCrewId}/` : '/api/crew/';
+        const method = isEditMode ? 'PUT' : 'POST';
+
+        const body = JSON.stringify({
+            surname: surnameInput.value.trim(),
+            name: nameInput.value.trim(),
+            patronymic: patronymicInput.value.trim() || null,
+            rank: positionInput.value.trim(),
+            citizenship: parseInt(citizenshipSelect.value),
+            doc_number: passportNumberInput.value.trim(),
+            birthday: dateOfBirthInput.value,
+            gender: genderSelect.value,
+            is_active: isActiveCheck.checked,
+            doc_type: docTypeSelect.value,
+            ferry: ferrySelect.value
+        });
+
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body
+            });
+
+            if (res.ok) {
+                crewModal.hide();
+                loadCrew();
+                resetForm();
+                alert(isEditMode ? 'Данные обновлены' : 'Член экипажа создан');
+            } else {
+                const errData = await res.json();
+                console.error('Ошибка API:', errData);
+                alert('Ошибка сохранения. Смотрите консоль.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Ошибка сети');
+        }
+    });
+
+    // --- Открытие формы добавления ---
+    document.getElementById('addCrewBtn')?.addEventListener('click', function () {
+        resetForm();
+        document.getElementById('crewModalLabel').textContent = 'Добавить члена экипажа';
+        deleteCrewBtn.classList.add('d-none');
+        saveCrewBtn.textContent = 'Сохранить';
+        crewModal.show();
+    });
+
+    // --- Сброс формы ---
+    function resetForm() {
+        currentCrewId = null;
+        crewForm.reset();
+        citizenshipSelect.selectedIndex = 185;
+        docTypeSelect.selectedIndex = 1;
+    }
+
+    // --- Получение CSRF токена ---
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith(`${name}=`)) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // --- Загрузка гражданства в select ---
+    async function loadCitizenships() {
+        const res = await fetch('/api/citizenships/');
+        const data = await res.json();
+        citizenshipSelect.innerHTML = '<option value="">-- Выберите --</option>';
+        citizenshipsMap = {};
+        data.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.name;
+            citizenshipSelect.appendChild(opt);
+            citizenshipsMap[c.id] = c.name;
+        });
+    }
+
+    async function loadDocTypes() {
+        try {
+            const res = await fetch('/api/doctypes/');
+            const data = await res.json();
+            docTypeSelect.innerHTML = '<option value="">-- Выберите --</option>';
+            docTypesMap = {}; // ← очищаем старые данные
+
+            data.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.textContent = `${d.name}`;
+                docTypeSelect.appendChild(opt);
+                docTypesMap[d.id] = `${d.name}`;
+            });
+        } catch (err) {
+            console.error('Ошибка загрузки типов документов:', err);
+        }
+    }
+
+    async function loadFerries() {
+        try {
+            const res = await fetch('/api/ferries/');
+            const data = await res.json();
+            ferrySelect.innerHTML = '<option value="">-- Выберите --</option>';
+            ferrySelectMap = {}; // ← очищаем старые данные
+
+            data.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.textContent = `${d.name}`;
+                ferrySelect.appendChild(opt);
+                ferrySelectMap[d.id] = `${d.name}`;
+            });
+        } catch (err) {
+            console.error('Ошибка загрузки типов документов:', err);
+        }
+    }
+
+        async function loadFilterFerries() {
+                try {
+            const res = await fetch('/api/ferries/');
+            const data = await res.json();
+            ferryFilter.innerHTML = '<option value="">-- Выберите --</option>';
+            ferryFilterMap = {}; // ← очищаем старые данные
+
+            data.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.textContent = `${d.name}`;
+                ferryFilter.appendChild(opt);
+                ferryFilterMap[d.id] = `${d.name}`;
+            });
+        } catch (err) {
+            console.error('Ошибка загрузки типов документов:', err);
+        }
+    }
+
+
+    // --- Инициализация ---
+    loadCitizenships();
+    loadCrew();
+    loadDocTypes();
+    loadFerries();
+    loadFilterFerries();
+
+    // --- Поиск ---
+    function setupSearchHandlers() {
+        if (searchSurname) {
+            searchSurname.addEventListener('input', () => {
+                currentPage = 1;
+                loadCrew(currentPage);
+            });
+        }
+
+        if (searchPassport) {
+            searchPassport.addEventListener('input', () => {
+                currentPage = 1;
+                loadCrew(currentPage);
+            });
+        }
+
+        if (searchPosition) {
+            searchPosition.addEventListener('input', () => {
+                currentPage = 1;
+                loadCrew(currentPage);
+            });
+        }
+
+        if (activeFilter) {
+            activeFilter.addEventListener('change', () => {
+                currentPage = 1;
+                loadCrew(currentPage);
+            });
+        }
+        if (ferryFilter) {
+            ferryFilter.addEventListener('change', () => {
+                currentPage = 1;
+                loadCrew(currentPage);
+            });
+        }
+    }
+
+    setupSearchHandlers();
+});
+</script>
+{% endblock %}

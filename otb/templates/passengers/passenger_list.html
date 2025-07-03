@@ -659,6 +659,8 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('passengerModalLabel').textContent = 'Добавить пассажира';
         deletePassengerBtn.classList.add('d-none');
         savePassengerBtn.textContent = 'Сохранить';
+        citizenshipSelect.selectedIndex = 185;
+        docTypeSelect.selectedIndex = 1;
 
         // Автоматически ставим номер билета
         loadLastTicketNumber();
@@ -719,9 +721,9 @@ document.addEventListener('DOMContentLoaded', function () {
             data.forEach(d => {
                 const opt = document.createElement('option');
                 opt.value = d.id;
-                opt.textContent = `${d.name} (${d.pk_for_file})`;
+                opt.textContent = `${d.name}`;
                 docTypeSelect.appendChild(opt);
-                docTypesMap[d.id] = `${d.name} (${d.pk_for_file})`;
+                docTypesMap[d.id] = `${d.name}`;
             });
         } catch (err) {
             console.error('Ошибка загрузки типов документов:', err);

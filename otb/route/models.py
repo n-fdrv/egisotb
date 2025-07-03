@@ -40,6 +40,7 @@ class CrewMember(models.Model):
     surname = models.CharField('Фамилия', max_length=100)
     name = models.CharField('Имя', max_length=100)
     patronymic = models.CharField('Отчество', max_length=100, blank=True, null=True)
+    birthday = models.DateField('Дата рождения')
     rank = models.CharField('Должность', max_length=100)
     gender = models.CharField('Пол', max_length=1, choices=GENDER_CHOICES)
     citizenship = models.ForeignKey(
