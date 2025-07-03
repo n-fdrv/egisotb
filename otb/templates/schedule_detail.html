@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Рейс {{ schedule.name }}{% endblock %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Рейс: {{ schedule.name }}</h2>
+        <a href="/schedules/" class="btn btn-outline-secondary">&laquo; Назад</a>
+    </div>
+
+    <!-- Основная информация -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>Информация о рейсе</strong>
+        </div>
+        <div class="card-body">
+            <p><strong>Пункт отправления:</strong> {{ schedule.departure_port }}</p>
+            <p><strong>Пункт прибытия:</strong> {{ schedule.arrival_port }}</p>
+            <p><strong>Дата отправления:</strong> {{ schedule.departure_date|date:"d.m.Y" }} {{ schedule.departure_time }}</p>
+            <p><strong>Дата прибытия:</strong> {{ schedule.arrival_date|date:"d.m.Y" }} {{ schedule.arrival_time }}</p>
+            <p><strong>Паром:</strong> {{ schedule.ferry.name }} ({{ schedule.ferry.registration_number }})</p>
+            <p><strong>Тип маршрута:</strong> {{ schedule.route_type.name }}</p>
+        </div>
+    </div>
+
+    <!-- Пассажиры -->
+    <div class="row">
+        <div class="col-md-6">
+            <h4>Пассажиры</h4>
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th>Фамилия</th>
+                        <th>Имя</th>
+                        <th>Документ</th>
+                        <th>Номер</th>
+                    </tr>
+                </thead>
+                <tbody id="passenger-list">
+                    <!-- Данные будут загружены через JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Экипаж -->
+        <div class="col-md-6">
+            <h4>Экипаж</h4>
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th>Фамилия</th>
+                        <th>Имя</th>
+                        <th>Должность</th>
+                        <th>Паспорт</th>
+                    </tr>
+                </thead>
+                <tbody id="crew-list">
+                    <!-- Данные будут загружены через JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async function () {
+    const match = window.location.pathname.match(/\/schedule\/(\d+)\//);
+    const scheduleId = parseInt(match[1]);
+
+    console.log(scheduleId)
+
+    if (!scheduleId || isNaN(scheduleId)) {
+        alert('Неверный ID рейса');
+        return;
+    }
+
+    // --- Загрузка данных о рейсе ---
+    async function loadScheduleDetail(id) {
+        try {
+            const res = await fetch(`/api/schedules/${id}/`);
+            if (!res.ok) throw new Error(`Ошибка загрузки рейса ${res.status}`);
+            return await res.json();
+        } catch (err) {
+            console.error(err);
+            alert('Ошибка загрузки данных рейса');
+        }
+    }
+
+    // --- Загрузка пассажиров ---
+    async function loadPassengers(id) {
+        try {
+            const res = await fetch(`/api/schedules/${id}/passengers/`);
+            if (!res.ok) throw new Error(`Ошибка загрузки пассажиров ${res.status}`);
+            return await res.json();
+        } catch (err) {
+            console.error(err);
+            document.getElementById('passenger-list').innerHTML = '<tr><td colspan="4" class="text-danger">Ошибка загрузки пассажиров</td></tr>';
+        }
+    }
+
+    // --- Загрузка экипажа ---
+    async function loadCrew(id) {
+        try {
+            const res = await fetch(`/api/schedules/${id}/crew/`);
+            if (!res.ok) throw new Error(`Ошибка загрузки экипажа ${res.status}`);
+            return await res.json();
+        } catch (err) {
+            console.error(err);
+            document.getElementById('crew-list').innerHTML = '<tr><td colspan="4" class="text-danger">Ошибка загрузки экипажа</td></tr>';
+        }
+    }
+
+    // --- Отображение данных ---
+    const passengerList = document.getElementById('passenger-list');
+    const crewList = document.getElementById('crew-list');
+
+    const schedule = await loadScheduleDetail(scheduleId);
+    const passengers = await loadPassengers(scheduleId);
+    const crew = await loadCrew(scheduleId);
+
+    if (schedule) {
+        document.getElementById('schedule-name').textContent = schedule.name;
+        document.getElementById('departure-port').textContent = schedule.departure_port;
+        document.getElementById('arrival-port').textContent = schedule.arrival_port;
+        document.getElementById('ferry-name').textContent = schedule.ferry ? `${schedule.ferry.name} (${schedule.ferry.registration_number})` : 'Не указан';
+    }
+
+    if (passengers?.length > 0) {
+        passengers.forEach(p => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${p.surname}</td>
+                <td>${p.name}</td>
+                <td>${p.doc_type}</td>
+                <td>${p.doc_number}</td>
+            `;
+            passengerList.appendChild(tr);
+        });
+    } else {
+        passengerList.innerHTML = '<tr><td colspan="4" class="text-muted">Нет пассажиров</td></tr>';
+    }
+
+    if (crew?.length > 0) {
+        crew.forEach(c => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${c.surname}</td>
+                <td>${c.name}</td>
+                <td>${c.rank}</td>
+                <td>${c.passport_number}</td>
+            `;
+            crewList.appendChild(tr);
+        });
+    } else {
+        crewList.innerHTML = '<tr><td colspan="4" class="text-muted">Нет членов экипажа</td></tr>';
+    }
+});
+</script>
+{% endblock %}

@@ -1,6 +1,9 @@
-# from django.urls import path
-# from .views import schedule_list
-#
-# urlpatterns = [
-#     path('', schedule_list, name='schedule_list'),
-# ]
+from django.urls import path
+from django.views.generic import TemplateView
+
+from route import views
+
+urlpatterns = [
+    path('', TemplateView.as_view(template_name='voyage_list.html'), name='voyage_list'),
+    path('<int:pk>/', views.voyage_detail, name='schedule_detail'),
+]

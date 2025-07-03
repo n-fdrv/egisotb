@@ -45,3 +45,16 @@ body {
     max-height: 600px; /* или другое значение */
     overflow-y: auto;
 }
+
+.max-h-200 {
+    max-height: 200px;
+    overflow-y: auto;
+}
+.list-group-item:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+
+.clickable-rows tr {
+    cursor: pointer;
+}

@@ -134,14 +134,46 @@ def voyage_list(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET'])
+@api_view(['GET', 'PUT'])
 def voyage_detail(request, pk):
     try:
         voyage = Voyage.objects.get(pk=pk)
-        serializer = VoyageSerializer(voyage)
-        return Response(serializer.data)
     except Voyage.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = VoyageSerializer(voyage)
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = VoyageSerializer(voyage, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return None
+
+@api_view(['GET'])
+def voyage_passengers(request, pk):
+    try:
+        schedule = Voyage.objects.get(pk=pk)
+        passengers = schedule.passengers.all()
+        serializer = PassengerSerializer(passengers, many=True)
+        return Response(serializer.data)
+    except Voyage.DoesNotExist:
+        return Response(status=404)
+
+
+@api_view(['GET'])
+def voyage_crew(request, pk):
+    try:
+        schedule = Voyage.objects.get(pk=pk)
+        crew = schedule.crew.all()
+        serializer = CrewMemberSerializer(crew, many=True)
+        return Response(serializer.data)
+    except Voyage.DoesNotExist:
+        return Response(status=404)
+
 
 @api_view(['GET'])
 def ferries_list(request):

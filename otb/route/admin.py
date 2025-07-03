@@ -10,7 +10,7 @@ class FerryAdmin(admin.ModelAdmin):
 
 @admin.register(Voyage)
 class VoyageAdmin(admin.ModelAdmin):
-    list_display = ['name', 'departure_date', 'departure_time', 'arrival_date', 'ferry', 'route_type']
+    list_display = ['id', 'name', 'departure_date', 'departure_time', 'arrival_date', 'ferry', 'route_type']
     filter_horizontal = ['passengers', 'crew']
     list_filter = ['departure_date', 'ferry', 'route_type']
     search_fields = ['name', 'departure_port', 'arrival_port']

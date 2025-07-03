@@ -40,7 +40,7 @@
                 <th scope="col">Действия</th>
             </tr>
         </thead>
-        <tbody id="schedule-body">
+        <tbody id="schedule-body" class="clickable-rows">
             <!-- Данные будут подгружаться через JS -->
         </tbody>
     </table>
@@ -50,7 +50,7 @@
     </nav>
     <!-- Блок "Генерация расписания" -->
 <!-- Модальное окно -->
-<div class="modal fade" id="scheduleModal" tabindex="-1">
+    <div class="modal fade" id="scheduleModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
@@ -115,6 +115,7 @@
         </div>
     </div>
 </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -138,6 +139,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- При инициализации ---
     const today = getTodayDate();
+
+
 
     if (dateFilter) {
         dateFilter.value = today;
@@ -340,6 +343,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             renderTable(data.results);
             renderPagination(data.count, page, data.next ? page + 1 : null);
+            setupRowClickHandlers();
         } catch (err) {
             console.error(err);
             tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Ошибка загрузки данных</td></tr>';
@@ -359,6 +363,7 @@ document.addEventListener('DOMContentLoaded', function () {
         schedules.forEach(s => {
             const tr = document.createElement('tr');
             const ferryName = s.ferry ? s.ferry.name : 'Неизвестен';
+            tr.setAttribute('data-id', s.id);
             tr.innerHTML = `
                 <td>${s.name}</td>
                 <td>${new Date(s.departure_date).toLocaleDateString()} ${s.departure_time}</td>
@@ -431,6 +436,17 @@ document.addEventListener('DOMContentLoaded', function () {
         return cookieValue;
     }
 
+    function setupRowClickHandlers() {
+        document.querySelectorAll('#schedule-body tr').forEach(tr => {
+            tr.addEventListener('click', function () {
+                const scheduleId = this.dataset.id;
+                if (!scheduleId) return;
+
+                window.location.href = `/schedules/${scheduleId}/`;
+            });
+        });
+    }
+
     // --- Инициализация ---
     loadFerries(); // ← загружаем паромы
     loadSchedules(); // ← первый запрос без фильтров
@@ -450,6 +466,8 @@ document.addEventListener('DOMContentLoaded', function () {
         currentPage = 1;
         loadSchedules(currentPage);
     });
+
+
 
 
 });

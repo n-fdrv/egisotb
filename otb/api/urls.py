@@ -9,6 +9,8 @@ urlpatterns = [
     path('passengers/last_ticket/', views.get_last_ticket),
     path('schedules/', views.voyage_list),
     path('schedules/<int:pk>/', views.voyage_detail),
+    path('schedules/<int:pk>/passengers/', views.voyage_passengers),
+    path('schedules/<int:pk>/crew/', views.voyage_crew),
     path('ferries/', views.ferries_list),
     path('schedules/bulk/', views.bulk_create_schedules),
     path('crew/', views.crew_list),
