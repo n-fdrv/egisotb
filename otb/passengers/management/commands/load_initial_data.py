@@ -19,6 +19,7 @@ class Command(BaseCommand):
             for item in doc_types:
                 DocType.objects.get_or_create(
                     name=item['name'],
-                    defaults={'pk_for_file': item['pk_for_file']}
+                    defaults={'pk_for_file': item['pk_for_file']},
+                    short_name=item['short_name']
                 )
             self.stdout.write(self.style.SUCCESS(f'✅ {len(doc_types)} записей типов документов загружено'))

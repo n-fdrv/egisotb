@@ -4,77 +4,235 @@
 
 {% block content %}
 <div class="container py-5">
+    <input type="hidden" id="currentScheduleId" value="{{ schedule.id }}">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Рейс: {{ schedule.name }}</h2>
+        <h2>
+            {% if schedule.ferry %}
+            {{ schedule.ferry }}
+            {% endif %}
+             Рейс: {{ schedule.name }} | {{ schedule.departure_date|date:"d.m.Y" }} {{ schedule.departure_time }}</h2>
         <a href="/schedules/" class="btn btn-outline-secondary">&laquo; Назад</a>
     </div>
 
-    <!-- Основная информация -->
+<!-- Основная информация -->
     <div class="card mb-4">
         <div class="card-header">
             <strong>Информация о рейсе</strong>
         </div>
-        <div class="card-body">
-            <p><strong>Пункт отправления:</strong> {{ schedule.departure_port }}</p>
-            <p><strong>Пункт прибытия:</strong> {{ schedule.arrival_port }}</p>
-            <p><strong>Дата отправления:</strong> {{ schedule.departure_date|date:"d.m.Y" }} {{ schedule.departure_time }}</p>
-            <p><strong>Дата прибытия:</strong> {{ schedule.arrival_date|date:"d.m.Y" }} {{ schedule.arrival_time }}</p>
-            <p><strong>Паром:</strong> {{ schedule.ferry.name }} ({{ schedule.ferry.registration_number }})</p>
-            <p><strong>Тип маршрута:</strong> {{ schedule.route_type.name }}</p>
-            <div class="mb-3">
-                <button id="showPassengersBtn" class="btn btn-primary me-2 active" data-tab="passengers">Пассажиры</button>
-                <button id="showCrewBtn" class="btn btn-primary" data-tab="crew">Экипаж</button>
+        <div class="card-body d-flex flex-wrap justify-content-between align-items-start">
+
+            <!-- Левая часть: данные о рейсе -->
+            <div class="col-md-6 pe-md-3 mb-4 mb-md-0">
+                <h5 class="text-muted">Детали рейса</h5>
+                <dl class="row mb-0">
+                    <dt class="col-sm-5"><strong>Название:</strong></dt>
+                    <dd class="col-sm-7" id="scheduleName">
+                        {% if schedule.name %}
+                            {{ schedule.name }}
+                        {% else %}
+                            Не указано
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-5"><strong>Паром:</strong></dt>
+                    <dd class="col-sm-7" id="ferryName">
+                        {% if schedule.ferry %}
+                            {{ schedule.ferry.name }} ({{ schedule.ferry.registration_number }})
+                        {% else %}
+                            Не выбран
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-5"><strong>Маршрут:</strong></dt>
+                    <dd class="col-sm-7" id="route">
+                        {% if schedule.departure_port and schedule.arrival_port %}
+                            {{ schedule.departure_port }} → {{ schedule.arrival_port }}
+                        {% else %}
+                            Не указан
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-5"><strong>Дата отправления:</strong></dt>
+                    <dd class="col-sm-7" id="departureDate">
+                        {{ schedule.departure_date|date:"d.m.Y" }}
+                    </dd>
+
+                    <dt class="col-sm-5"><strong>Время:</strong></dt>
+                    <dd class="col-sm-7" id="departureTime">
+                        {{ schedule.departure_time }} – {{ schedule.arrival_time }}
+                    </dd>
+                </dl>
+            </div>
+
+            <!-- Средняя часть: участники рейса -->
+            <div class="col-md-6 mb-4 mb-md-0">
+                <h5 class="text-muted">Участники рейса</h5>
+                <dl class="row mb-0">
+                    <dt class="col-sm-5"><strong>Количество пассажиров:</strong></dt>
+                    <dd class="col-sm-7" id="passengerCount">0</dd>
+
+                    <dt class="col-sm-5"><strong>Количество экипажа:</strong></dt>
+                    <dd class="col-sm-7" id="crewCount">0</dd>
+
+                    <dt class="col-sm-5 mt-3"><strong>Статус:</strong></dt>
+                    <dd class="col-sm-7 mt-3">
+                        <span id="scheduleStatus" class="badge bg-success">Активен</span>
+                    </dd>
+
+                    <!-- Кнопки -->
+                    <div class="col-md-12 mt-3 d-flex justify-content-start gap-2">
+                        <a href="{% url 'schedule_download' schedule.id %}" class="btn btn-outline-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 .5-.5c.512 0 1 .5 1 1v3a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-3a.5.5 0 0 1 .5-.5"/>
+                                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v8.793L5.354 8.146a.5.5 0 0 0-.708.708z"/>
+                            </svg>
+                            Скачать CSV
+                        </a>
+
+                        <button id="blockScheduleBtn" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-lock" viewBox="0 0 16 16">
+                                <path d="M8 1a2 2 0 0 1 2 2v2h3a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h3V3a2 2 0 0 1 2-2m0 1a1 1 0 0 0-1 1v2h2V2a1 1 0 0 0-1-1"/>
+                                <path d="M3 8a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>
+                            </svg>
+                            Заблокировать
+                        </button>
+                    </div>
+                </dl>
+            </div>
+
+            <!-- Правая часть: выбор парома и кнопка применить в одной строке -->
+            <div class="w-100 mt-4">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-6 col-9">
+                        <label for="ferrySelect" class="form-label mb-0">Выберите паром</label>
+                        <select id="ferrySelect" class="form-select">
+                            <option value="">Выберите паром</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 col-3">
+                        <button id="applyFerryBtn" class="btn btn-outline-danger w-100">Применить</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Кнопки внизу -->
+            <div class="w-100 mt-4 d-flex justify-content-center">
+
+            <!-- Блок с пассажирами -->
+                <div id="passengersTab" class="tab-content active">
+    <div class="row g-3">
+        <!-- Левая колонка: все активные пассажиры -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Все пассажиры</h5>
+                    <!-- Поле поиска -->
+                    <input type="text" id="searchPassengerInput" class="form-control form-control-sm w-50" placeholder="Фамилия / Билет">
+                </div>
+                <div class="card-body">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th scope="col">№</th>
+                                <th scope="col">Ф.И.О.</th>
+                                <th scope="col">Пол</th>
+                                <th scope="col">ДР</th>
+                                <th scope="col">Документ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activePassengersList"></tbody>
+                    </table>
+                    <nav aria-label="Page navigation" id="activePassengersPagination" class="mt-3 d-flex justify-content-center">
+                        <ul class="pagination justify-content-center mb-0"></ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая колонка: пассажиры на рейсе -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Пассажиры на рейсе</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th scope="col">№</th>
+                                <th scope="col">Ф.И.О.</th>
+                                <th scope="col">Пол</th>
+                                <th scope="col">ДР</th>
+                                <th scope="col">Документ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="onSchedulePassengersList"></tbody>
+                    </table>
+                    <nav aria-label="Page navigation" id="onSchedulePassengersPagination" class="mt-3 d-flex justify-content-center">
+                        <ul class="pagination justify-content-center mb-0"></ul>
+                    </nav>
+                </div>
             </div>
         </div>
     </div>
-
-        <!-- Блок с пассажирами -->
-    <div id="passengerTab" class="tab-content active">
+        </div>
+            <!-- Блок с экипажем (временно скрыт) -->
+        <div id="crewTab" class="tab-content d-none">
         <div class="row g-3">
-            <!-- Левая колонка: все активные пассажиры -->
+            <!-- Левая колонка: весь активный экипаж -->
             <div class="col-md-6">
-                <h5>Активные пассажиры</h5>
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th scope="col">№</th>
-                            <th scope="col">Ф.И.О.</th>
-                            <th scope="col">Пол</th>
-                            <th scope="col">ДР</th>
-                            <th scope="col">Документ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="activePassengersList"></tbody>
-                </table>
-                <nav aria-label="Page navigation" id="activePassengersPagination" class="mt-3">
-                    <ul class="pagination justify-content-center"></ul>
-                </nav>
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Весь экипаж</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th scope="col">№</th>
+                                    <th scope="col">Ф.И.О.</th>
+                                    <th scope="col">Должность</th>
+                                    <th scope="col">Паспорт</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activeCrewList"></tbody>
+                        </table>
+                        <nav aria-label="Page navigation" id="activeCrewPagination" class="mt-3 d-flex justify-content-center">
+                            <ul class="pagination justify-content-center mb-0"></ul>
+                        </nav>
+                    </div>
+                </div>
             </div>
 
-            <!-- Правая колонка: пассажиры на рейсе -->
+            <!-- Правая колонка: экипаж на рейсе -->
             <div class="col-md-6">
-                <h5>Пассажиры на рейсе</h5>
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th scope="col">№</th>
-                            <th scope="col">Ф.И.О.</th>
-                            <th scope="col">Пол</th>
-                            <th scope="col">ДР</th>
-                            <th scope="col">Документ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="onSchedulePassengersList"></tbody>
-                </table>
-                <nav aria-label="Page navigation" id="onSchedulePassengersPagination" class="mt-3">
-                    <ul class="pagination justify-content-center"></ul>
-                </nav>
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Экипаж на рейсе</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th scope="col">№</th>
+                                    <th scope="col">Ф.И.О.</th>
+                                    <th scope="col">Должность</th>
+                                    <th scope="col">Паспорт</th>
+                                </tr>
+                            </thead>
+                            <tbody id="onScheduleCrewList"></tbody>
+                        </table>
+                        <nav aria-label="Page navigation" id="onScheduleCrewPagination" class="mt-3 d-flex justify-content-center">
+                            <ul class="pagination justify-content-center mb-0"></ul>
+                        </nav>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-        <!-- Блок с экипажем (временно скрыт) -->
-    <div id="crewTab" class="tab-content d-none">
-        <!-- Здесь будет аналогично для экипажа -->
+            <!-- Здесь будет аналогично для экипажа -->
+        </div>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -82,12 +240,17 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', async function () {
-
-
-
+    Promise.all([
+            new Promise(resolve => {
+                loadDocTypes();
+                resolve();
+            })
+        ]).then(() => {
+            // Теперь справочники точно загружены
+        });
     const path = window.location.pathname;
     const match = path.match(/\/schedules\/(\d+)/);
-    console.log(path)
+
     if (!match) {
         alert('❌ Не найден ID рейса');
         return;
@@ -100,60 +263,95 @@ document.addEventListener('DOMContentLoaded', async function () {
     const showCrewBtn = document.getElementById('showCrewBtn');
     const passengerTab = document.getElementById('passengerTab');
     const crewTab = document.getElementById('crewTab');
-
     const activePassengersList = document.getElementById('activePassengersList');
     const onSchedulePassengersList = document.getElementById('onSchedulePassengersList');
-    const activePassengersPagination = document.getElementById('activePassengersPagination');
-    const onSchedulePassengersPagination = document.getElementById('onSchedulePassengersPagination');
+    const searchPassengerInput = document.getElementById('searchPassengerInput');
+    const ferrySelect = document.getElementById('ferrySelect');
+    const applyFerryBtn = document.getElementById('applyFerryBtn');
+    const ferryName = document.getElementById('ferryName');
 
     let allPassengers = [];
+    let filteredAllPassengers = [];
     let passengersOnSchedule = [];
-    let currentPage = 1;
-    let totalPages = 1;
+    let docTypesMap = {};
+
+    let allCrew = [];
+    let filteredAllCrew = [];
+    let crewOnSchedule = [];
+    let allCrewByFerry = []; // ← все члены экипажа выбранного парома
+
+    const searchCrewInput = document.getElementById('searchCrewInput');
+    const activeCrewList = document.getElementById('activeCrewList');
+    const onScheduleCrewList = document.getElementById('onScheduleCrewList');
+
+    function updatePassengerAndCrewCount() {
+        const passengerCount = passengersOnSchedule.length;
+        const crewCount = crewOnSchedule.length;
+
+        const passengerCountEl = document.getElementById('passengerCount');
+        const crewCountEl = document.getElementById('crewCount');
+
+        if (passengerCountEl) passengerCountEl.textContent = passengerCount;
+        if (crewCountEl) crewCountEl.textContent = crewCount;
+    }
 
 
-    loadAllPassengers(1);
-    loadPassengersOnSchedule(1);
 
-    // --- Переключение вкладок ---
     [showPassengersBtn, showCrewBtn].forEach(btn => {
+        if (!btn) return; // ← если элемент не найден — пропускаем его
+
         btn.addEventListener('click', function () {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('d-none'));
-            document.getElementById(`${this.dataset.tab}Tab`).classList.remove('d-none');
+            // Сбрасываем активность всех вкладок
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('d-none');
+            });
+
+            // Показываем нужную вкладку
+            const tabId = this.dataset.tab;
+            const targetTab = document.getElementById(`${tabId}Tab`);
+
+            if (targetTab) {
+                targetTab.classList.remove('d-none');
+            } else {
+                console.warn(`Вкладка #${tabId}Tab не найдена`);
+            }
         });
     });
 
-    // --- Загрузка данных о рейсе и пассажирах ---
-    async function loadPassengersOnSchedule() {
+    // --- Загрузка всех пассажиров ---
+    async function loadAllPassengers(page = 1) {
         try {
-            const res = await fetch(`/api/schedules/${scheduleId}/passengers/`);
-            if (!res.ok) throw new Error(`Ошибка загрузки ${res.status}`);
-            passengersOnSchedule = await res.json();
-            renderPassengerTabs();
+            const url = new URL('/api/passengers/', window.location.origin);
+            url.searchParams.set('page', page);
+            url.searchParams.set('is_active', 'true'); // ← только активные
+
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
+
+            const data = await res.json();
+            allPassengers = data || [];
+            filteredAllPassengers = [...allPassengers];
+
+            renderPassengerTabs(); // ← рендерим таблицу
         } catch (err) {
             console.error(err);
             alert('Ошибка загрузки пассажиров');
         }
     }
 
-    async function loadAllPassengers(page = 1) {
+    // --- Загрузка пассажиров на рейсе ---
+    async function loadPassengersOnSchedule() {
         try {
-            const url = new URL('/api/passengers/', window.location.origin);
-            url.searchParams.set('page', page);
-            url.searchParams.set('is_active', true);
+            const res = await fetch(`/api/schedules/${scheduleId}/passengers/`);
+            if (!res.ok) throw new Error(`Ошибка загрузки пассажиров`);
 
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
-            const data = await res.json();
-
-            allPassengers = data || [];
-            totalPages = Math.ceil(data.count / 10); // ← например, всего 45 → 5 страниц
-
+            passengersOnSchedule = await res.json();
             renderPassengerTabs();
-            renderPagination('activePassengersPagination', data.count, page, data.next ? page + 1 : null);
+            updatePassengerAndCrewCount(); // ← вызываем здесь
         } catch (err) {
             console.error(err);
-            alert('Ошибка загрузки пассажиров');
+            passengersOnSchedule = [];
+            updatePassengerAndCrewCount();
         }
     }
 
@@ -165,103 +363,55 @@ document.addEventListener('DOMContentLoaded', async function () {
         activeList.innerHTML = '';
         onScheduleList.innerHTML = '';
 
-        // --- Все активные пассажиры ---
-        allPassengers.forEach(p => {
-            const tr = document.createElement('tr');
-            tr.dataset.id = p.id;
-            tr.innerHTML = `
+        const onScheduleIds = passengersOnSchedule.map(p => p.id);
+
+        // --- Левая колонка: все пассажиры ---
+        filteredAllPassengers.forEach(p => {
+            if (!onScheduleIds.includes(p.id)) {
+                const tr = document.createElement('tr');
+                tr.dataset.id = p.id;
+                tr.innerHTML = `
                     <td>${p.ticket_number}</td>
                     <td>${p.surname} ${p.name} ${p.patronymic}</td>
-                    <td>${p.gender}</td>
-                    <td>${p.birthday}</td>
-                    <td>${p.doc_number}</td>
-                       `;
-            tr.style.cursor = 'pointer';
-            tr.addEventListener('click', () => addPassengerToSchedule(p));
-            activeList.appendChild(tr);
+                    <td>${p.gender === 'M' ? 'Мужской' : 'Женский'}</td>
+                    <td>${new Date(p.birthday).toLocaleDateString()}</td>
+                    <td>${docTypesMap[p.doc_type] || 'Ошибка загрузки'}: ${p.doc_number}</td>
+                `;
+                tr.style.cursor = 'pointer';
+                tr.addEventListener('click', () => addPassengerToSchedule(p));
+                activeList.appendChild(tr);
+            }
         });
 
-        // --- Пассажиры на рейсе ---
+        // --- Правая колонка: на рейсе ---
         passengersOnSchedule.forEach(p => {
             const tr = document.createElement('tr');
             tr.dataset.id = p.id;
             tr.innerHTML = `
-                    <td>${p.ticket_number}</td>
-                    <td>${p.surname} ${p.name} ${p.patronymic}</td>
-                    <td>${p.gender}</td>
-                    <td>${p.birthday}</td>
-                    <td>${p.doc_number}</td>
-                   `;
+                <td>${p.ticket_number}</td>
+                <td>${p.surname} ${p.name} ${p.patronymic}</td>
+                <td>${p.gender === 'M' ? 'Мужской' : 'Женский'}</td>
+                <td>${new Date(p.birthday).toLocaleDateString()}</td>
+                <td>${docTypesMap[p.doc_type] || 'Ошибка загрузки'}: ${p.doc_number}</td>
+            `;
             tr.style.cursor = 'pointer';
             tr.addEventListener('click', () => removePassengerFromSchedule(p));
             onScheduleList.appendChild(tr);
         });
     }
 
-    [showPassengersBtn, showCrewBtn].forEach(btn => {
-        btn.addEventListener('click', function () {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('d-none'));
-            document.getElementById(`${this.dataset.tab}Tab`).classList.remove('d-none');
-
-            // Можно также обновлять данные при переключении
-            if (this.dataset.tab === 'passengers') {
-                loadAllPassengers();
-                loadPassengers();
-            }
-        });
-    });
-
-    function renderPagination(containerId, total, current, next) {
-        const container = document.getElementById(containerId);
-
-        // ✅ Проверяем, существует ли контейнер
-        if (!container) {
-            console.warn(`Контейнер #${containerId} не найден`);
-            return;
-        }
-
-        container.innerHTML = ''; // ← безопасно, потому что container != null
-        const ul = document.createElement('ul');
-        ul.className = 'pagination justify-content-center';
-        container.appendChild(ul);
-
-        // Кнопка "Назад"
-        if (current > 1) {
-            const prevLi = document.createElement('li');
-            prevLi.className = 'page-item';
-            prevLi.innerHTML = `<a class="page-link" href="#">«</a>`;
-            prevLi.addEventListener('click', e => {
-                e.preventDefault();
-                loadAllPassengers(current - 1);
-            });
-            ul.appendChild(prevLi);
-        }
-
-        // Страницы
-        const totalPages = Math.ceil(total / 10); // 10 пассажиров на странице
-        for (let i = 1; i <= totalPages; i++) {
-            const li = document.createElement('li');
-            li.className = 'page-item' + (i === current ? ' active' : '');
-            li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
-            li.addEventListener('click', e => {
-                e.preventDefault();
-                loadAllPassengers(i);
-            });
-            ul.appendChild(li);
-        }
-
-        // Кнопка "Вперёд"
-        if (next) {
-            const nextLi = document.createElement('li');
-            nextLi.className = 'page-item';
-            nextLi.innerHTML = `<a class="page-link" href="#">»</a>`;
-            nextLi.addEventListener('click', e => {
-                e.preventDefault();
-                loadAllPassengers(next);
-            });
-            ul.appendChild(nextLi);
-        }
+    function filterAllPassengers(query) {
+    if (!query.trim()) {
+        filteredAllPassengers = [...allPassengers];
+        return;
     }
+
+    const lowerQuery = query.toLowerCase();
+    filteredAllPassengers = allPassengers.filter(p =>
+        p.surname.toLowerCase().includes(lowerQuery) ||
+        p.ticket_number.toString().includes(query)
+    );
+}
 
         // --- Получение CSRF токена ---
     function getCookie(name) {
@@ -338,6 +488,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             // Меняем статус локально
             passenger.is_active = false;
 
+            updatePassengerAndCrewCount();
             renderPassengerTabs();
         }).catch(err => {
             console.error(err);
@@ -364,6 +515,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             // Восстанавливаем статус
             passenger.is_active = true;
 
+            updatePassengerAndCrewCount(); // ← обновляем количество
             renderPassengerTabs();
         }).catch(err => {
             console.error(err);
@@ -371,9 +523,278 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
     }
 
+
+
+    searchPassengerInput?.addEventListener('input', function () {
+        const query = this.value.trim();
+        filterAllPassengers(query); // ← обновляем фильтрованный список
+        renderPassengerTabs(); // ← перерисовываем таблицу
+    });
+
+    async function loadDocTypes() {
+        try {
+            const res = await fetch('/api/doctypes/');
+            const data = await res.json();
+            docTypesMap = {}; // ← очищаем старые данные
+
+            data.forEach(d => {
+                docTypesMap[d.id] = `${d.short_name}`;
+            });
+        } catch (err) {
+            console.error('Ошибка загрузки типов документов:', err);
+        }
+    }
+
+    async function loadFerries() {
+        const ferrySelects = document.querySelectorAll('#ferrySelect, #ferryFilter'); // ← обновляем все нужные поля
+        if (!ferrySelects.length) return;
+
+        try {
+            const res = await fetch('/api/ferries/');
+            if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
+            const data = await res.json();
+
+            // Обновляем все select'ы
+            ferrySelects.forEach(select => {
+                select.innerHTML = '<option value="">Выберите паром</option>';
+                data.forEach(f => {
+                    const opt = document.createElement('option');
+                    opt.value = f.id;
+                    opt.textContent = `${f.name}`;
+                    select.appendChild(opt);
+                });
+            });
+
+        } catch (err) {
+            console.error(err);
+            ferrySelects.forEach(select => {
+                select.innerHTML = '<option disabled>Ошибка загрузки</option>';
+            });
+        }
+    }
+
+    async function loadCrewByFerry(ferryId) {
+        try {
+            const url = new URL('/api/crew/', window.location.origin);
+            url.searchParams.set('ferry_id', ferryId);
+            url.searchParams.set('is_active', true);
+
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
+            const data = await res.json();
+
+            allCrewByFerry = data || [];
+            renderCrewTabs(); // ← если ты используешь таблицы
+        } catch (err) {
+            console.error(err);
+            allCrewByFerry = [];
+            alert('Ошибка загрузки экипажа');
+        }
+    }
+
+    async function applyFerryAndAddAllMembers(ferryId) {
+        try {
+            const res = await fetch(`/api/schedules/${scheduleId}/apply_ferry/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ ferry_id: parseInt(ferryId) })
+            });
+            console.log(res);
+            if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
+            const result = await res.json();
+
+            // --- Обновляем локальные данные ---
+            passengersOnSchedule = result.passengers || [];
+            crewOnSchedule = result.crew || [];
+
+            renderPassengerTabs();
+            renderCrewTabs();
+
+            alert(`✅ Добавлено: ${crewOnSchedule.length} членов экипажа`);
+
+        } catch (err) {
+            console.error(err);
+            alert('❌ Ошибка при применении парома');
+        }
+    }
+
+        document.getElementById('applyFerryBtn')?.addEventListener('click', async () => {
+            const ferryId = ferrySelect.value;
+
+            if (!ferryId) {
+                alert('❗ Выберите паром');
+                return;
+            }
+            window.location.reload();
+
+            await applyFerryAndAddAllMembers(parseInt(ferryId));
+            renderCrewTabs(); // ← отрисовываем данные
+            const selectedOption = ferrySelect.options[ferrySelect.selectedIndex];
+            ferryName.textContent = selectedOption.text;;
+
+        });
+
+
+
+    async function loadAllCrew(page = 1) {
+        try {
+            const url = new URL('/api/crew/', window.location.origin);
+            url.searchParams.set('is_active', 'true'); // ← только активные
+            url.searchParams.set('ferry_id', '{{schedule.ferry.id}}');
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
+
+            const data = await res.json();
+            allCrew = data|| [];
+            filteredAllCrew = [...allCrew];
+
+            renderCrewTabs(); // ← отрисовываем данные
+        } catch (err) {
+            console.error(err);
+            alert('Ошибка загрузки экипажа');
+        }
+    }
+
+    async function loadCrewOnSchedule() {
+        try {
+            const res = await fetch(`/api/schedules/${scheduleId}/crew/`);
+            if (!res.ok) throw new Error(`Ошибка загрузки экипажа`);
+
+            crewOnSchedule = await res.json();
+            renderCrewTabs();
+            updatePassengerAndCrewCount(); // ← вызываем здесь
+        } catch (err) {
+            console.error(err);
+            crewOnSchedule = [];
+            updatePassengerAndCrewCount();
+        }
+    }
+
+    function filterAllCrew(query) {
+        if (!query.trim()) {
+            filteredAllCrew = [...allCrew];
+            return;
+        }
+
+        const lowerQuery = query.toLowerCase();
+        filteredAllCrew = allCrew.filter(c =>
+            c.surname.toLowerCase().includes(lowerQuery) ||
+            c.doc_number.toString().includes(query)
+        );
+    }
+
+    searchCrewInput?.addEventListener('input', function () {
+        const query = this.value.trim();
+        filterAllCrew(query); // ← обновляем список
+        renderCrewTabs();
+    });
+
+    function renderCrewTabs() {
+        activeCrewList.innerHTML = '';
+        onScheduleCrewList.innerHTML = '';
+
+        const onScheduleIds = crewOnSchedule.map(c => c.id);
+
+        // --- Левая колонка: все активные ---
+        filteredAllCrew.forEach(c => {
+            if (!onScheduleIds.includes(c.id)) {
+                const tr = document.createElement('tr');
+                tr.dataset.id = c.id;
+                tr.innerHTML = `
+                    <td>${c.rank}</td>
+                    <td>${c.surname} ${c.name}</td>
+                    <td>${c.rank}</td>
+                    <td>${docTypesMap[c.doc_type] || 'Ошибка загрузки'}: ${c.doc_number}</td>
+                `;
+                tr.style.cursor = 'pointer';
+                tr.addEventListener('click', () => addCrewToSchedule(c));
+                activeCrewList.appendChild(tr);
+            }
+        });
+
+        // --- Правая колонка: на рейсе ---
+        crewOnSchedule.forEach(c => {
+            const tr = document.createElement('tr');
+            tr.dataset.id = c.id;
+            tr.innerHTML = `
+                <td>${c.rank}</td>
+                <td>${c.surname} ${c.name}</td>
+                <td>${c.rank}</td>
+                <td>${c.doc_number}</td>
+            `;
+            tr.style.cursor = 'pointer';
+            tr.addEventListener('click', () => removeCrewFromSchedule(c));
+            onScheduleCrewList.appendChild(tr);
+        });
+    }
+
+    async function addCrewToSchedule(crewMember) {
+        try {
+            const res = await fetch(`/api/schedules/${scheduleId}/add_crew/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ crew_id: crewMember.id })
+            });
+
+            if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
+            crewOnSchedule.push(crewMember);
+            allCrew = allCrew.filter(c => c.id !== crewMember.id);
+            filteredAllCrew = [...allCrew];
+
+            updatePassengerAndCrewCount();
+            renderCrewTabs();
+        } catch (err) {
+            console.error(err);
+            alert('❌ Ошибка при добавлении экипажа');
+        }
+    }
+
+    async function removeCrewFromSchedule(crewMember) {
+        try {
+            const res = await fetch(`/api/schedules/${scheduleId}/remove_crew/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ crew_id: crewMember.id })
+            });
+
+            if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
+
+            // Убираем из списка на рейсе
+            crewOnSchedule = crewOnSchedule.filter(c => c.id !== crewMember.id);
+
+            // Возвращаем в общий список
+            allCrew.push(crewMember);
+            filteredAllCrew = [...allCrew];
+
+            updatePassengerAndCrewCount();
+            renderCrewTabs(); // ← важно: перерисовываем таблицы
+        } catch (err) {
+            console.error(err);
+            alert('Ошибка при удалении члена экипажа');
+        }
+    }
+
+    document.getElementById('ferryFilter')?.addEventListener('change', () => {
+        currentPage = 1;
+        loadSchedules(currentPage);
+    });
+
     // --- Инициализация ---
     await loadAllPassengers();
     await loadPassengersOnSchedule();
+    await loadAllCrew();
+    await loadCrewOnSchedule();
+    loadFerries(); // ← первым делом загружаем паромы
+    loadDocTypes();
 
 });
 </script>

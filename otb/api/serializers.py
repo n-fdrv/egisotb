@@ -12,7 +12,7 @@ class CitizenshipSerializer(serializers.ModelSerializer):
 class DocTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = DocType
-        fields = ['id', 'name', 'pk_for_file']
+        fields = ['id', 'name', 'pk_for_file', 'short_name']
 
 
 class PassengerSerializer(serializers.ModelSerializer):
@@ -70,7 +70,7 @@ class CrewMemberSerializer(serializers.ModelSerializer):
                   'is_active']
 
 class VoyageSerializer(serializers.ModelSerializer):
-    ferry = FerrySerializer(read_only=True)
+    ferry = serializers.PrimaryKeyRelatedField(queryset=Ferry.objects.all(), required=False)
     passengers = PassengerSerializer(many=True, read_only=True)
     crew = CrewMemberSerializer(many=True, read_only=True)
     passenger_count = serializers.SerializerMethodField()

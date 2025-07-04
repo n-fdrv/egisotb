@@ -216,6 +216,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let currentPassengerId = null;
     let citizenshipsMap = {};
     let docTypesMap = {};
+    let docTypesMapShort = {};
     let lastTicketNumber = 1000;
 
 
@@ -342,7 +343,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td>${p.patronymic || 'NA'}</td>
                 <td>${new Date(p.birthday).toLocaleDateString()}</td>
                 <td>${citizenshipsMap[p.citizenship] || 'Ошибка загрузки'}</td>
-                <td>${docTypesMap[p.doc_type] || 'Ошибка загрузки'}</td>
+                <td>${docTypesMapShort[p.doc_type] || 'Ошибка загрузки'}</td>
                 <td>${p.doc_number}</td>
                 <td>
                     <button class="btn btn-sm btn-success copy-btn">
@@ -431,7 +432,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <td>${new Date(p.birthday).toLocaleDateString()}</td>
             <td>${p.gender}</td>
             <td>${citizenshipsMap[p.citizenship] || 'Ошибка загрузки'}</td>
-            <td>${docTypesMap[p.doc_type] || 'Ошибка загрузки'}</td>
+            <td>${docTypesMapShort[p.doc_type] || 'Ошибка загрузки'}</td>
             <td>${p.doc_number}</td>
             <td>${p.is_active ? 'Да' : 'Нет'}</td>
             <td>
@@ -729,6 +730,21 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    async function loadDocTypesShort() {
+        try {
+            const res = await fetch('/api/doctypes/');
+            const data = await res.json();
+            docTypeSelect.innerHTML = '<option value="">-- Выберите --</option>';
+            docTypesMapShort = {}; // ← очищаем старые данные
+
+            data.forEach(d => {
+                docTypesMapShort[d.id] = `${d.short_name}`;
+            });
+        } catch (err) {
+            console.error('Ошибка загрузки типов документов:', err);
+        }
+    }
+
     function fillFormFromPassenger(data) {
         surnameInput.value = data.surname || '';
         nameInput.value = data.name || '';
@@ -750,6 +766,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Инициализация ---
     loadCitizenships();
     loadDocTypes();
+    loadDocTypesShort();
     copyPassengers();
     loadPassengers();
     setupSearchHandlers();

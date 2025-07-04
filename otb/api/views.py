@@ -4,7 +4,6 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.utils import json
 
 from passengers.models import Passenger
 from api.serializers import PassengerSerializer, VoyageSerializer, FerrySerializer, CrewMemberSerializer
@@ -143,8 +142,16 @@ def voyage_detail(request, pk):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET':
+        schedule = Voyage.objects.get(pk=pk)
         serializer = VoyageSerializer(voyage)
-        return Response(serializer.data)
+
+        passenger_count = schedule.passengers.count()
+        crew_count = schedule.crew.count()
+        return Response({
+            'detail': serializer.data,
+            'passenger_count': passenger_count,
+            'crew_count': crew_count
+        })
 
     elif request.method == 'PUT':
         try:
@@ -186,6 +193,36 @@ def voyage_crew(request, pk):
     except Voyage.DoesNotExist:
         return Response(status=404)
 
+@api_view(['POST'])
+def add_crew_to_schedule(request, pk):
+    try:
+        schedule = Voyage.objects.get(pk=pk)
+        crew_id = request.data.get('crew_id')
+        crew = CrewMember.objects.get(pk=crew_id)
+
+        schedule.crew.add(crew)
+        crew.is_active = False
+        crew.save()
+
+        return Response({'detail': 'Член экипажа добавлен'})
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)
+
+@api_view(['POST'])
+def remove_crew_from_schedule(request, pk):
+    try:
+        schedule = Voyage.objects.get(pk=pk)
+        crew_id = request.data.get('crew_id')
+        crew = CrewMember.objects.get(pk=crew_id)
+
+        schedule.crew.remove(crew)
+        crew.is_active = True
+        crew.save()
+
+        return Response({'detail': 'Член экипажа удалён'})
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)
+
 
 @api_view(['GET'])
 def ferries_list(request):
@@ -218,7 +255,7 @@ def crew_list(request):
             name = request.GET.get('name')
             doc_number = request.GET.get('doc_number')
             rank = request.GET.get('rank')
-            ferry = request.GET.get('ferry')
+            ferry = request.GET.get('ferry_id')
             is_active = request.GET.get('is_active')
             limit = request.GET.get('limit')
 
@@ -308,3 +345,49 @@ def remove_passenger_from_schedule(request, pk):
         return Response({'detail': 'Пассажир удалён'})
     except Exception as e:
         return Response({'error': str(e)}, status=400)
+
+@api_view(['POST', 'PUT'])
+def update_schedule_ferry(request, pk):
+    try:
+        schedule = Voyage.objects.get(pk=pk)
+    except Voyage.DoesNotExist:
+        return Response({'error': 'Рейс не найден'}, status=404)
+
+    serializer = VoyageSerializer(schedule, data=request.data, partial=True)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=400)
+
+    # Сохраняем обновлённый рейс
+    serializer.save()
+
+    # Отправляем обновлённые данные обратно
+    return Response(serializer.data)
+
+@api_view(['POST'])
+def apply_ferry_and_add_members(request, pk):
+    try:
+        schedule = Voyage.objects.get(pk=pk)
+    except Voyage.DoesNotExist:
+        return Response({'error': 'Рейс не найден'}, status=404)
+
+    ferry_id = request.data.get('ferry_id')
+
+    if not ferry_id:
+        return Response({'error': 'Не передан ferry_id'}, status=400)
+
+    # --- Добавляем весь экипаж этого парома ---
+    crew = CrewMember.objects.filter(ferry_id=ferry_id, is_active=True)
+
+    schedule.crew.clear()
+    # --- Добавляем членов экипажа к рейсу ---
+    schedule.crew.add(*crew)
+
+    # --- Сохраняем рейс ---
+    schedule.ferry_id = ferry_id
+    schedule.save()
+
+    # --- Возвращаем данные ---
+    return Response({
+        'detail': 'Паром и участники успешно обновлены',
+        'crew': list(crew.values('id', 'surname', 'name', 'doc_number'))
+    })

@@ -20,6 +20,7 @@ class Citizenship(models.Model):
 
 class DocType(models.Model):
     name = models.CharField('Название документа', max_length=100)
+    short_name = models.CharField("Краткое название", max_length=32, blank=True, null=True)
     pk_for_file = models.PositiveIntegerField(
         'Уникальный номер (для файла)', unique=True
     )
