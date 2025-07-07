@@ -116,7 +116,12 @@ def voyage_list(request):
 
         departure_date = request.GET.get('departure_date')
         ferry_id = request.GET.get('ferry_id')
+        is_active = request.GET.get('is_active')
 
+        if is_active in ['true', 'True', '1']:
+            voyages = voyages.filter(is_active=True)
+        elif is_active in ['false', 'False', '0']:
+            voyages = voyages.filter(is_active=False)
         if departure_date:
             voyages = voyages.filter(departure_date__icontains=departure_date)
         if ferry_id:
@@ -150,7 +155,8 @@ def voyage_detail(request, pk):
         return Response({
             'detail': serializer.data,
             'passenger_count': passenger_count,
-            'crew_count': crew_count
+            'crew_count': crew_count,
+            'is_active': schedule.is_active
         })
 
     elif request.method == 'PUT':
@@ -390,4 +396,18 @@ def apply_ferry_and_add_members(request, pk):
     return Response({
         'detail': 'Паром и участники успешно обновлены',
         'crew': list(crew.values('id', 'surname', 'name', 'doc_number'))
+    })
+
+@api_view(['POST'])
+def unlock_schedule(request, pk):
+    try:
+        schedule = Voyage.objects.get(pk=pk)
+    except Voyage.DoesNotExist:
+        return Response({'error': 'Рейс не найден'}, status=404)
+
+    schedule.is_active = True
+    schedule.save()
+
+    return Response({
+        'detail': 'Рейс разблокирован'
     })

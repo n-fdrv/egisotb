@@ -178,10 +178,6 @@ document.addEventListener('DOMContentLoaded', function () {
             new Promise(resolve => {
                 loadFerries();
                 resolve();
-            }),
-            new Promise(resolve => {
-                loadFilterFerries();
-                resolve();
             })
         ]).then(() => {
             // Теперь справочники точно загружены
@@ -233,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (passport) url.searchParams.set('doc_number', passport);
         if (position) url.searchParams.set('rank', position);
         if (isActive !== '') url.searchParams.set('is_active', isActive);
-        if (ferry) url.searchParams.set('ferry', ferry);
+        if (ferry) url.searchParams.set('ferry_id', ferry);
 
         console.log('🔍 Запрос:', url.toString());
 
@@ -524,6 +520,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const res = await fetch('/api/ferries/');
             const data = await res.json();
             ferrySelect.innerHTML = '<option value="">-- Выберите --</option>';
+            ferryFilter.innerHTML = '<option value="">-- Выберите --</option>';
             ferrySelectMap = {}; // ← очищаем старые данные
 
             data.forEach(d => {
@@ -531,26 +528,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 opt.value = d.id;
                 opt.textContent = `${d.name}`;
                 ferrySelect.appendChild(opt);
-                ferrySelectMap[d.id] = `${d.name}`;
-            });
-        } catch (err) {
-            console.error('Ошибка загрузки типов документов:', err);
-        }
-    }
-
-        async function loadFilterFerries() {
-                try {
-            const res = await fetch('/api/ferries/');
-            const data = await res.json();
-            ferryFilter.innerHTML = '<option value="">-- Выберите --</option>';
-            ferryFilterMap = {}; // ← очищаем старые данные
-
-            data.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d.id;
-                opt.textContent = `${d.name}`;
                 ferryFilter.appendChild(opt);
-                ferryFilterMap[d.id] = `${d.name}`;
+                ferrySelectMap[d.id] = `${d.name}`;
             });
         } catch (err) {
             console.error('Ошибка загрузки типов документов:', err);
@@ -563,7 +542,6 @@ document.addEventListener('DOMContentLoaded', function () {
     loadCrew();
     loadDocTypes();
     loadFerries();
-    loadFilterFerries();
 
     // --- Поиск ---
     function setupSearchHandlers() {

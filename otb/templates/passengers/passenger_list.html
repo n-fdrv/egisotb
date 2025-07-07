@@ -298,6 +298,8 @@ document.addEventListener('DOMContentLoaded', function () {
         docTypeSelect.value = data.doc_type; // ID типа документа
         docNumberInput.value = data.doc_number;
         isActiveCheck.checked = data.is_active;
+        console.log(data.doc_type);
+
     }
 
     async function copyPassengers(page = 1) {
@@ -562,6 +564,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Установка значений для select
             citizenshipSelect.value = data.citizenship;
             docTypeSelect.value = data.doc_type;
+            console.log(data.doc_type)
 
             // Обновляем заголовок и кнопки
             document.getElementById('passengerModalLabel').textContent = 'Редактировать пассажира';
@@ -715,6 +718,7 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             const res = await fetch('/api/doctypes/');
             const data = await res.json();
+
             docTypeSelect.innerHTML = '<option value="">-- Выберите --</option>';
             docTypesMap = {}; // ← очищаем старые данные
 
@@ -730,11 +734,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    async function loadDocTypesShort() {
+        async function loadDocTypesShort() {
         try {
             const res = await fetch('/api/doctypes/');
             const data = await res.json();
-            docTypeSelect.innerHTML = '<option value="">-- Выберите --</option>';
             docTypesMapShort = {}; // ← очищаем старые данные
 
             data.forEach(d => {
@@ -746,6 +749,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function fillFormFromPassenger(data) {
+        console.log(data)
         surnameInput.value = data.surname || '';
         nameInput.value = data.name || '';
         patronymicInput.value = data.patronymic || '';

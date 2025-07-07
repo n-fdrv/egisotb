@@ -63,12 +63,8 @@ def download_schedule_data(request, pk):
 
     # --- Общие данные для всех записей ---
     route_type = 0
-
     depart_date = adjust_date(schedule.departure_date, schedule.departure_time)
     arrive_date = adjust_date(schedule.arrival_date, schedule.arrival_time)
-
-
-
     ship_class = '0'
     travel_class = 'б/к'
     operator_version = '20'
@@ -76,10 +72,7 @@ def download_schedule_data(request, pk):
     operation_type_for_crew = '50'
     amount = '0'
     currency = 'RUB'
-    buy_date = datetime.datetime.now().replace(microsecond=0).isoformat(timespec='seconds')
-
     register_time_is = now.isoformat(timespec='seconds')
-
 
     # --- Экипаж ---
     for c in crew:
@@ -173,6 +166,7 @@ def download_schedule_data(request, pk):
         ]
         writer.writerow(row)
 
-
+    schedule.is_active = False
+    schedule.save()
 
     return response

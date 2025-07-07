@@ -75,6 +75,7 @@ class Voyage(models.Model):
     route_type = models.CharField('Тип маршрута', max_length=1, choices=ROUTE_TYPE_CHOICES)
     passengers = models.ManyToManyField(Passenger, related_name='schedules', verbose_name='Пассажиры', null=True, blank=True)
     crew = models.ManyToManyField(CrewMember, related_name='schedules', verbose_name='Экипаж', null=True, blank=True)
+    is_active = models.BooleanField(default=True, verbose_name='Статус рейса')
 
     def __str__(self):
         return f"{self.ferry} → {self.departure_date} - {self.departure_time}"
