@@ -19,17 +19,21 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
+from django.contrib.auth import views as auth_views
+
+from api.views import register
+from passengers.views import passengers_list, crew_list
 
 urlpatterns = [
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
-    path('passengers/', TemplateView.as_view(template_name='passengers/passenger_list.html'), name='passenger_list'),
-    path('crew/', TemplateView.as_view(template_name='crew_list.html'), name='crew_list'),
-    path('accounts/login/', TemplateView.as_view(template_name='stub.html'), name='login'),
-    path('accounts/register/', TemplateView.as_view(template_name='stub.html'), name='register'),
-    path('accounts/logout/', TemplateView.as_view(template_name='stub.html'), name='logout'),
+    path('passengers/', passengers_list, name='passenger_list'),
+    path('crew/', crew_list, name='crew_list'),
     path('api/', include('api.urls')),
     path('schedules/', include('route.urls')),
     path('admin/', admin.site.urls),
+    path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('register/', register, name='register'),
     path('auth/', include('users.urls')),
 ]
 

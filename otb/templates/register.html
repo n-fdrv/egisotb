@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Регистрация{% endblock %}
+{% load static %}
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-success text-white text-center">
+                    <h4 class="mb-0">Регистрация</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form id="registerForm" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Имя -->
+                        <div class="mb-3">
+                            <label for="firstName" class="form-label">Имя</label>
+                            <input type="text" class="form-control" id="firstName" name="first_name" required>
+                            <div class="invalid-feedback">Введите имя</div>
+                        </div>
+
+                        <!-- Фамилия -->
+                        <div class="mb-3">
+                            <label for="lastName" class="form-label">Фамилия</label>
+                            <input type="text" class="form-control" id="lastName" name="last_name" required>
+                            <div class="invalid-feedback">Введите фамилию</div>
+                        </div>
+
+                        <!-- Логин -->
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Логин</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                            <div class="invalid-feedback">Введите логин</div>
+                        </div>
+                        <!-- Пароль -->
+                        <div class="mb-3">
+                            <label for="password1" class="form-label">Пароль</label>
+                            <input type="password" class="form-control" id="password1" name="password1" required minlength="8">
+                            <div class="invalid-feedback">Пароль должен быть не менее 8 символов</div>
+                        </div>
+
+                        <!-- Подтверждение пароля -->
+                        <div class="mb-3">
+                            <label for="password2" class="form-label">Подтвердите пароль</label>
+                            <input type="password" class="form-control" id="password2" name="password2" required>
+                            <div class="invalid-feedback">Пароли должны совпадать</div>
+                        </div>
+
+                        <!-- Кнопка -->
+                        <button class="btn btn-success w-100 mt-3" type="submit">Зарегистрироваться</button>
+                        <p class="mt-3 mb-0 text-center">
+                            Уже зарегистрированы?
+                            <a href="{% url 'login' %}">Войдите</a>
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% load static %}
+<script src="{% static 'js/register.js' %}"></script>
+{% endblock %}

@@ -253,6 +253,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         members.forEach(m => {
+            const statusBadge = m.is_active
+                ? '<span class="badge rounded-pill text-bg-success">Да</span>'
+                : '<span class="badge rounded-pill text-bg-secondary">Нет</span>';
             const tr = document.createElement('tr');
             tr.dataset.id = m.id;
             tr.innerHTML = `
@@ -264,13 +267,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td>${docTypesMap[m.doc_type] || 'Ошибка загрузки'}</td>
                 <td>${new Date(m.birthday).toLocaleDateString()}</td>
                 <td>${m.gender === 'M' ? 'Мужской' : 'Женский'}</td>
-                <td>${m.is_active ? 'Да' : 'Нет'}</td>
+                <td>${statusBadge}</td>
                 <td>
-                    <button class="btn btn-sm btn-warning edit-btn me-1">
-                        <img src="{% static 'svg/pencil.svg' %}" width="20" height="20">
+                    <button class="btn btn-sm btn-outline-warning edit-btn passengers-btn" title="Редактировать">
+                        <img src="{% static 'svg/pencil.svg' %}" alt="Редактировать" width="20" height="20">
                     </button>
-                    <button class="btn btn-sm btn-danger delete-btn">
-                        <img src="{% static 'svg/trash.svg' %}" width="20" height="20">
+                    <button class="btn btn-sm btn-outline-danger delete-btn passengers-btn" title="Удалить">
+                        <img src="{% static 'svg/trash.svg' %}" alt="Удалить" width="20" height="20">
                     </button>
                 </td>
             `;

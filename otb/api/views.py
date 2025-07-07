@@ -1,15 +1,23 @@
 import re
 
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import JsonResponse
-from django.views import View
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
+from core.middlewares.users import is_operator
 from passengers.models import Passenger
 from api.serializers import PassengerSerializer, VoyageSerializer, FerrySerializer, CrewMemberSerializer
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
+from django.shortcuts import render, redirect
+from django.contrib.auth import login, logout
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 from route.models import Voyage, Ferry, CrewMember
 from .serializers import CitizenshipSerializer, DocTypeSerializer
@@ -18,6 +26,8 @@ from passengers.models import Citizenship, DocType
 User = get_user_model()
 
 
+@login_required
+@user_passes_test(is_operator)
 @api_view(['GET', 'POST'])
 def passenger_list(request):
     if request.method == 'GET':
@@ -70,9 +80,11 @@ def passenger_list(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return None
 
+@login_required
+@user_passes_test(is_operator)
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([IsAuthenticated])
 def passenger_detail(request, pk):
     try:
         passenger = Passenger.objects.get(pk=pk)
@@ -100,26 +112,32 @@ def passenger_detail(request, pk):
     return None
 
 
+@login_required
+@user_passes_test(is_operator)
 @api_view(['GET'])
 def citizenship_list(request):
     countries = Citizenship.objects.all()
     serializer = CitizenshipSerializer(countries, many=True)
     return Response(serializer.data)
 
-
+@login_required
+@user_passes_test(is_operator)
 @api_view(['GET'])
 def doctype_list(request):
     types = DocType.objects.all()
     serializer = DocTypeSerializer(types, many=True)
     return Response(serializer.data)
 
+@login_required
+@user_passes_test(is_operator)
 @api_view(['GET'])
 def get_last_ticket(request):
     last_passenger = Passenger.objects.order_by('-id').first()
     last_ticket = last_passenger.ticket_number if last_passenger else 1000
     return Response({'last_ticket': last_ticket})
 
-
+@login_required
+@user_passes_test(is_operator)
 @api_view(['GET', 'POST'])
 def voyage_list(request):
     if request.method == 'GET':
@@ -149,7 +167,8 @@ def voyage_list(request):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+@login_required
+@user_passes_test(is_operator)
 @api_view(['GET', 'PUT'])
 def voyage_detail(request, pk):
     try:
@@ -189,6 +208,8 @@ def voyage_detail(request, pk):
     return None
 
 
+@login_required
+@user_passes_test(is_operator)
 @api_view(['GET'])
 def schedule_passengers(request, pk):
     try:
@@ -199,7 +220,8 @@ def schedule_passengers(request, pk):
     except Voyage.DoesNotExist:
         return Response(status=404)
 
-
+@login_required
+@user_passes_test(is_operator)
 @api_view(['GET'])
 def voyage_crew(request, pk):
     try:
@@ -210,6 +232,8 @@ def voyage_crew(request, pk):
     except Voyage.DoesNotExist:
         return Response(status=404)
 
+@login_required
+@user_passes_test(is_operator)
 @api_view(['POST'])
 def add_crew_to_schedule(request, pk):
     try:
@@ -225,6 +249,8 @@ def add_crew_to_schedule(request, pk):
     except Exception as e:
         return Response({'error': str(e)}, status=400)
 
+@login_required
+@user_passes_test(is_operator)
 @api_view(['POST'])
 def remove_crew_from_schedule(request, pk):
     try:
@@ -240,14 +266,16 @@ def remove_crew_from_schedule(request, pk):
     except Exception as e:
         return Response({'error': str(e)}, status=400)
 
-
+@login_required
+@user_passes_test(is_operator)
 @api_view(['GET'])
 def ferries_list(request):
     ferries = Ferry.objects.all()
     serializer = FerrySerializer(ferries, many=True)
     return Response(serializer.data)
 
-
+@login_required
+@user_passes_test(is_operator)
 @api_view(['POST'])
 def bulk_create_schedules(request):
     schedules = request.data.get('schedules', [])
@@ -261,7 +289,8 @@ def bulk_create_schedules(request):
             print(serializer.errors)
     return Response(created, status=status.HTTP_201_CREATED)
 
-
+@login_required
+@user_passes_test(is_operator)
 @api_view(['GET', 'POST'])
 def crew_list(request):
     if request.method == 'GET':
@@ -303,7 +332,8 @@ def crew_list(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+@login_required
+@user_passes_test(is_operator)
 @api_view(['GET', 'PUT', 'DELETE'])
 def crew_detail(request, pk):
     try:
@@ -326,6 +356,8 @@ def crew_detail(request, pk):
         member.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+@login_required
+@user_passes_test(is_operator)
 @api_view(['POST'])
 def add_passenger_to_schedule(request, pk):
     try:
@@ -344,6 +376,8 @@ def add_passenger_to_schedule(request, pk):
     except Exception as e:
         return Response({'error': str(e)}, status=400)
 
+@login_required
+@user_passes_test(is_operator)
 @api_view(['POST'])
 def remove_passenger_from_schedule(request, pk):
     try:
@@ -363,6 +397,9 @@ def remove_passenger_from_schedule(request, pk):
     except Exception as e:
         return Response({'error': str(e)}, status=400)
 
+
+@login_required
+@user_passes_test(is_operator)
 @api_view(['POST', 'PUT'])
 def update_schedule_ferry(request, pk):
     try:
@@ -380,6 +417,8 @@ def update_schedule_ferry(request, pk):
     # Отправляем обновлённые данные обратно
     return Response(serializer.data)
 
+@login_required
+@user_passes_test(is_operator)
 @api_view(['POST'])
 def apply_ferry_and_add_members(request, pk):
     try:
@@ -409,6 +448,9 @@ def apply_ferry_and_add_members(request, pk):
         'crew': list(crew.values('id', 'surname', 'name', 'doc_number'))
     })
 
+
+@login_required
+@user_passes_test(is_operator)
 @api_view(['POST'])
 def unlock_schedule(request, pk):
     try:
@@ -423,6 +465,8 @@ def unlock_schedule(request, pk):
         'detail': 'Рейс разблокирован'
     })
 
+@login_required
+@user_passes_test(is_operator)
 @api_view(['POST'])
 def checkin_passenger_by_qr(request, pk):
     try:
@@ -444,3 +488,68 @@ def checkin_passenger_by_qr(request, pk):
     passenger.save()
 
     return Response({'detail': 'Пассажир добавлен на рейс'})
+
+
+@csrf_exempt
+def register(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        first_name = data.get('first_name')
+        last_name = data.get('last_name')
+        username = data.get('username')
+        password1 = data.get('password1')
+        password2 = data.get('password2')
+
+        # --- Проверки ---
+        if not all([first_name, last_name, username, password1, password2]):
+            return JsonResponse({'success': False, 'error': 'Заполните все поля'})
+
+        if password1 != password2:
+            return JsonResponse({'success': False, 'error': 'Пароли не совпадают'})
+
+        if User.objects.filter(username=username).exists():
+            return JsonResponse({'success': False, 'error': 'Логин уже занят'})
+
+        try:
+            user = User.objects.create_user(
+                username=username,
+                password=password1,
+                first_name=first_name,
+                last_name=last_name
+            )
+            login(request, user)
+            return JsonResponse({
+                'success': True,
+                'redirect_url': '/',
+                'user': {
+                    'name': f"{user.first_name} {user.last_name}",
+                    'username': user.username
+                }
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+    return render(request, 'register.html')
+
+@csrf_exempt
+def login_view(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        username = data.get('username')
+        password = data.get('password')
+
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            login(request, user)
+            return JsonResponse({'success': True, 'redirect_url': '/'})
+        else:
+            return JsonResponse({'success': False, 'error': 'Неверные учетные данные'})
+
+    return render(request, 'login.html')
+
+
+@csrf_exempt
+def logout_view(request):
+    logout(request)
+    return JsonResponse({'success': True, 'redirect_url': '/login/'})

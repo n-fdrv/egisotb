@@ -1,11 +1,21 @@
 import csv
 import datetime
 
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
+
+from core.middlewares.users import is_operator
 from route.models import Voyage
 
 
+@login_required
+@user_passes_test(is_operator)
+def schedule_list(request):
+    return render(request, 'voyage_list.html')
+
+@login_required
+@user_passes_test(is_operator)
 def voyage_detail(request, pk):
     schedule = Voyage.objects.get(pk=pk)
     context = {
@@ -13,7 +23,8 @@ def voyage_detail(request, pk):
     }
     return render(request, 'schedule_detail.html', context)
 
-
+@login_required
+@user_passes_test(is_operator)
 def download_schedule_data(request, pk):
     # --- Получаем рейс ---
     schedule = get_object_or_404(Voyage.objects.prefetch_related('passengers', 'crew'), pk=pk)
