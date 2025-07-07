@@ -53,10 +53,24 @@
             </tbody>
         </table>
 
-        <!-- Пагинация -->
-        <nav aria-label="Page navigation" id="pagination" style="display: none;">
-            <ul class="pagination justify-content-center"></ul>
-        </nav>
+        <!-- Модальное окно для QR кода -->
+        <div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="qrModalLabel">QR-код пассажира</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center" id="qrContainer">
+                        <!-- QR-код будет здесь -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                        <button type="button" class="btn btn-primary" onclick="printQR()">Печать</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
 <!-- Модальное окно -->
@@ -181,6 +195,10 @@ document.addEventListener('DOMContentLoaded', function () {
             new Promise(resolve => {
                 loadDocTypes();
                 resolve();
+            }),
+            new Promise(resolve => {
+                loadDocTypesShort();
+                resolve();
             })
         ]).then(() => {
             // Теперь справочники точно загружены
@@ -213,11 +231,27 @@ document.addEventListener('DOMContentLoaded', function () {
     const deletePassengerBtn = document.getElementById('deletePassengerBtn');
     const savePassengerBtn = document.getElementById('savePassengerBtn');
 
+
     let currentPassengerId = null;
     let citizenshipsMap = {};
     let docTypesMap = {};
     let docTypesMapShort = {};
     let lastTicketNumber = 1000;
+
+    function validateDocumentNumber(docType, number) {
+        if (!docType || !number) return true;
+
+        switch (docType) {
+            case DOC_TYPE_PASSPORT_RF:
+                return /^\d{10}$/.test(number); // ← 10 цифр
+
+            case DOC_TYPE_BIRTH_CERTIFICATE:
+                return /^[IVX]{1,3}-[А-Я]{2}-\d{6}$/.test(number); // ← I-II-АБ-123456
+
+            default:
+                return true; // ← любой формат для других документов
+        }
+    }
 
 
     async function loadLastTicketNumber() {
@@ -424,6 +458,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     passengers.forEach(p => {
+        const statusBadge = p.is_active
+            ? '<span class="badge rounded-pill text-bg-success">Да</span>'
+            : '<span class="badge rounded-pill text-bg-secondary">Нет</span>';
         const tr = document.createElement('tr');
         tr.dataset.id = p.id;
         tr.innerHTML = `
@@ -436,18 +473,28 @@ document.addEventListener('DOMContentLoaded', function () {
             <td>${citizenshipsMap[p.citizenship] || 'Ошибка загрузки'}</td>
             <td>${docTypesMapShort[p.doc_type] || 'Ошибка загрузки'}</td>
             <td>${p.doc_number}</td>
-            <td>${p.is_active ? 'Да' : 'Нет'}</td>
+            <td>${statusBadge}</td>
             <td>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-warning edit-btn" title="Редактировать">
+                    <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 px-2 py-1 passengers-btn generateQRBtn" title="Сканировать QR">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M0 .5A.5.5 0 0 1 .5 0h5a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-5a.5.5 0 0 1 .5-.5"/>
+                            <path d="M13.5 0a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-5a.5.5 0 0 1 .5-.5h5zM14 1h-4v4h4v-4z"/>
+                            <path d="M2 12a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1H2zm1 4V2h3l-1 1-1 1-1 1H3z"/>
+                            <path d="M7 12a1 1 0 0 0-1 1v-3a1 1 0 0 0 1-1h3a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1h-3a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1h-3a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h3z"/>
+                        </svg>
+                        QR
+                    </button>
+                    <button class="btn btn-sm btn-outline-warning edit-btn passengers-btn" title="Редактировать">
                         <img src="{% static 'svg/pencil.svg' %}" alt="Редактировать" width="20" height="20">
                     </button>
-                    <button class="btn btn-sm btn-danger delete-btn" title="Удалить">
+                    <button class="btn btn-sm btn-outline-danger delete-btn passengers-btn" title="Удалить">
                         <img src="{% static 'svg/trash.svg' %}" alt="Удалить" width="20" height="20">
                     </button>
                 </div>
             </td>
         `;
+        tr.querySelector('.generateQRBtn')?.addEventListener('click', () => generateQRCode(p));
         passengerBody.appendChild(tr);
     });
 
@@ -648,7 +695,7 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 const errData = await res.json();
                 console.error('Ошибка API:', errData);
-                alert('Ошибка сохранения. Смотрите консоль.');
+                alert(errData.error);
             }
         } catch (err) {
             console.error(err);
@@ -766,6 +813,62 @@ document.addEventListener('DOMContentLoaded', function () {
         // Очищаем сообщения об ошибках, если они были
         document.querySelectorAll('.invalid-feedback').forEach(el => el.classList.remove('d-block'));
     }
+
+
+
+    function generateQRCode(passenger) {
+        const modal = document.getElementById('qrModal');
+        const container = document.getElementById('qrContainer');
+        const passengerId = passenger.id;
+
+        // --- Очистка предыдущего QR ---
+        container.innerHTML = '';
+
+        // --- Создание содержимого QR-кода ---
+        const qrData = JSON.stringify({
+            id: passenger.id,
+        });
+
+        // --- Генерация QR кода ---
+        const qr = qrcode(0, 'H');
+        qr.addData(qrData);
+        qr.make();
+
+        // --- Вставка QR кода в модальное окно ---
+        const qrImg = qr.createImgTag(6); // ← размер изображения
+        qrImg.alt = `QR для пассажира #${passengerId}`;
+        container.innerHTML = qrImg;
+
+        // --- Открытие модального окна ---
+        const qrModal = new bootstrap.Modal(modal);
+        qrModal.show();
+    }
+
+    function printQR() {
+        const content = document.getElementById('qrContainer').innerHTML;
+        if (!content) {
+            alert('❌ Нет данных для печати');
+            return;
+        }
+
+        // --- Открываем новое окно ---
+        const win = window.open('', '_blank');
+
+        win.document.write(`
+            <html>
+            <head><title>Печать QR</title></head>
+            <body onload="window.print(); window.onafterprint = function(){ window.close(); }">
+                ${content}
+            </body>
+            </html>
+        `);
+
+        win.document.close();
+    }
+
+    document.querySelector('#qrModal .btn-primary')?.addEventListener('click', () => {
+        printQR();
+    });
 
     // --- Инициализация ---
     loadCitizenships();

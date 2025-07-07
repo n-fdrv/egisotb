@@ -140,3 +140,11 @@ tr.passenger-row:hover {
     pointer-events: none;
     cursor: not-allowed !important;
 }
+
+.passengers-btn {
+    transition: transform 0.2s ease;
+}
+
+.passengers-btn:hover {
+    transform: scale(1.1);
+}

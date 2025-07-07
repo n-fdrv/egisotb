@@ -1,3 +1,5 @@
+import re
+
 from django.http import JsonResponse
 from django.views import View
 from rest_framework.decorators import api_view, permission_classes
@@ -50,14 +52,23 @@ def passenger_list(request):
     elif request.method == 'POST':
         data = request.data.copy()
         data['created_by'] = request.user.id  # Устанавливаем создателя
+        doc_type = data.get('doc_type')
+        doc_number = data.get('doc_number')
+
+        # --- Проверка формата документа ---
+        if doc_type == 1 and not re.fullmatch(r'^\d{10}$', doc_number):
+            return Response({'error': 'Неверный формат паспорта (должен состоять из 10 цифр)'}, status=400)
+
+        if doc_type == 5 and not re.fullmatch(r'^[IVX]{1,3}[А-Я]{2}\d{6}$', doc_number):
+            return Response({
+                'error': 'Неверный формат свидетельства о рождении'
+            }, status=400)
 
         serializer = PassengerSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        # Ловим ошибки
-        print(serializer.errors)  # ← посмотри в терминале Django
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'PUT', 'DELETE'])
@@ -411,3 +422,25 @@ def unlock_schedule(request, pk):
     return Response({
         'detail': 'Рейс разблокирован'
     })
+
+@api_view(['POST'])
+def checkin_passenger_by_qr(request, pk):
+    try:
+        passenger = Passenger.objects.get(pk=pk)
+    except Passenger.DoesNotExist:
+        return Response({'error': 'Пассажир не найден'}, status=404)
+
+    schedule_id = request.data.get('schedule_id');
+    if not schedule_id:
+        return Response({'error': 'Не указан рейс'}, status=400)
+
+    try:
+        schedule = Voyage.objects.get(pk=schedule_id)
+    except Voyage.DoesNotExist:
+        return Response({'error': 'Рейс не найден'}, status=404)
+
+    schedule.passengers.add(passenger)
+    passenger.is_active = False
+    passenger.save()
+
+    return Response({'detail': 'Пассажир добавлен на рейс'})
