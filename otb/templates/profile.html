@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}Профиль {{ first_name }} {{ last_name }}{% endblock %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row g-4">
+        <!-- Профиль пользователя -->
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 text-center">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Профиль</h4>
+                </div>
+                <div class="card-body p-4">
+                    <img src="{% static 'svg/person-circle.svg' %}" width="80" height="80" alt="Пользователь" class="rounded-circle mb-3">
+                    <h5 class="mb-1">{{ first_name }} {{ last_name }}</h5>
+
+                    <ul class="list-group list-group-flush mt-4">
+                        {% for group in user.groups.all %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Группа</span>
+                                <span class="badge bg-info rounded-pill">{{ group.name }}</span>
+                            </li>
+                        {% endfor %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Дата регистрации</span>
+                            <span>{{ user.date_joined|date:"d.m.Y H:i" }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Последний вход</span>
+                            <span>{{ user.last_login|default:"–"|date:"d.m.Y H:i" }}</span>
+                        </li>
+                    </ul>
+
+                                        <!-- Блок: все пользователи -->
+                    <div class="mt-4">
+                        <h6 class="text-muted small mb-2">Все пользователи:</h6>
+                        <ul id="userList" class="list-group list-group-flush">
+                            <!-- Сюда можно загрузить данные через JS или Django -->
+                            {% if all_users %}
+                                {% for u in all_users %}
+                                    {% if u.id != user.id %}
+                                        <li class="list-group-item px-0 py-1">
+                                            <a href="/user/{{ u.id }}/" class="text-decoration-none text-dark">
+                                                {{ u.first_name|default_if_none:'' }} {{ u.last_name|default_if_none:'' }}
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <li class="list-group-item px-0 py-1 text-muted small">Нет других пользователей</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Статистика -->
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Статистика</h5>
+                </div>
+                <div class="card-body p-4">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5"><strong>Добавлено пассажиров в базу:</strong></dt>
+                        <dd class="col-sm-7 fs-5" id="totalPassengersAdded">{{ passenger_count }}</dd>
+
+                        <dt class="col-sm-5 mt-3"><strong>Отправлено рейсов:</strong></dt>
+                        <dd class="col-sm-7 mt-3 fs-5" id="totalSchedules"> {{ schedules_created }}</dd>
+
+                        <dt class="col-sm-5 mt-3"><strong>Добавлено пассажиров на рейсы:</strong></dt>
+                        <dd class="col-sm-7 mt-3 fs-5" id="totalPassengersOnSchedule">{{ added_passengers_on_schedule }}</dd>
+
+                        <dt class="col-sm-5 mt-3"><strong>Добавлено экипажа на рейсы:</strong></dt>
+                        <dd class="col-sm-7 mt-3 fs-5" id="totalCrewAdded">{{ crew_member_count }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Последние рейсы -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Последние рейсы</h5>
+                    <span class="badge bg-primary">{{ recent_schedules|length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_schedules %}
+                        <table class="table table-hover table-striped table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Дата / Время</th>
+                                    <th>Паром</th>
+                                    <th class="text-end">Пассажиров</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for schedule in recent_schedules %}
+                                    <tr class="align-middle">
+                                        <td>
+                                            <a href="/schedules/{{ schedule.id }}/" class="text-decoration-none text-dark fw-semibold">
+                                                {{ schedule.departure_date|date:"d.m.Y" }} {{ schedule.departure_time }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <a href="/schedules/{{ schedule.id }}/" class="text-decoration-none text-dark fw-semibold">
+                                            {{ schedule.ferry|default:"–" }}
+                                            </a>
+                                        </td>
+                                        <td class="text-end text-muted">{{ schedule.passenger_count }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="list-group-item text-muted mb-0">Нет данных о последних рейсах</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Блок: активность -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Активность</h5>
+                    <span class="badge bg-primary">{{ activity_log|length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if activity_log %}
+                        <table class="table table-hover table-bordered table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Время</th>
+                                    <th>Действие</th>
+                                    <th>Объект</th>
+                                    <th>Рейс</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in activity_log %}
+                                    <tr>
+                                        <td class="fw-semibold small">{{ log.time }}</td>
+                                        <td>{{ log.action }}</td>
+                                        <td>{{ log.object_type }} "{{ log.object_repr }}"</td>
+                                        <td class="text-muted small">{{ log.schedule|default:"–" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="list-group-item text-muted mb-0">Нет записей об активности</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

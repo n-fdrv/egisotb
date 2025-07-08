@@ -151,7 +151,7 @@
                     </div>
                   <div class="mb-3 form-check">
                     <input type="checkbox" class="form-check-input" id="isActiveCheck" checked>
-                    <label class="form-check-label" for="isActiveCheck">Активный</label>
+                    <label class="form-check-label" for="isActiveCheck">Ожидает посадки</label>
                   </div>
                 </div>
               </div>
@@ -413,9 +413,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const name = nameInput?.value.trim();
         const docNumber = docNumberInput?.value.trim();
 
-        if (surname && surname.length >= 3) url.searchParams.set('surname', surname);
-        if (name && name.length >= 3) url.searchParams.set('name', name);
-        if (docNumber && docNumber.length >= 6) url.searchParams.set('doc_number', docNumber);
+        if (surname && surname.length >= 3) url.searchParams.set('surname', surname.toUpperCase());
+        if (name && name.length >= 3) url.searchParams.set('name', name.toUpperCase());
+        if (docNumber && docNumber.length >= 6) url.searchParams.set('doc_number', docNumber.toUpperCase());
 
 
         try {
@@ -983,17 +983,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 passenger.schedules.forEach(schedule => {
                     const li = document.createElement('li');
                     li.className = 'list-group-item';
+                    li.style.cursor = 'pointer';
                     li.innerHTML = `
-                        <strong>${schedule.name}</strong><br>
-                        <small>Дата: ${new Date(schedule.departure_date).toLocaleDateString()}<br>
-                        Паром: ${schedule.ferry_name}</small>
+                        <a href="/schedules/${schedule.id}/" class="text-decoration-none text-reset">
+                            <strong>${schedule.name}</strong><br>
+                            <small>Дата: ${new Date(schedule.departure_date).toLocaleDateString()}<br>
+                            Паром: ${schedule.ferry_name || 'Не указан'}</small>
+                        </a>
                     `;
                     tripsList.appendChild(li);
                 });
             } else {
                 const li = document.createElement('li');
                 li.className = 'list-group-item text-muted';
-                li.textContent = 'Рейсов нет';
+                li.textContent = 'Нет данных о рейсах';
                 tripsList.appendChild(li);
             }
 

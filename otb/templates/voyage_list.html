@@ -7,9 +7,11 @@
     <div class="row mb-4">
         <div class="col-12 d-flex justify-content-between align-items-center">
             <h3>Расписание</h3>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#scheduleModal">
+            {% if request.user.is_superuser %}
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#scheduleModal">
               Добавить расписание
             </button>
+            {% endif %}
         </div>
     </div>
     <!-- Фильтры -->

@@ -813,9 +813,25 @@ document.addEventListener('DOMContentLoaded', async function () {
         loadSchedules(currentPage);
     });
 
-    document.getElementById('downloadFileBtn')?.addEventListener('click', async function () {
+   document.getElementById('downloadFileBtn')?.addEventListener('click', async function (e) {
         const scheduleId = this.dataset.scheduleId;
-        window.location.href = `/schedules/${scheduleId}/download/`;
+
+        // --- Блокируем скачивание, если нет данных ---
+        const passengerCount = passengersOnSchedule.length;
+        const crewCount = crewOnSchedule.length;
+
+        if (passengerCount === 0 || crewCount === 0) {
+            e.preventDefault(); // ← останавливаем событие
+            const btn = document.getElementById('downloadFileBtn');
+            btn.classList.add('no-data');
+            btn.title = 'Нет пассажиров или экипажа для скачивания';
+            alert('❌ Нет пассажиров или экипажа для скачивания');
+            return; // ← ВАЖНО: выходим из функции, чтобы дальше ничего не выполнялось
+        }
+
+        // --- Открываем ссылку на скачивание только если данные есть ---
+        const downloadUrl = `/schedules/${scheduleId}/download/`;
+        window.open(downloadUrl, '_blank');
 
         try {
             setTimeout(() => {
@@ -824,7 +840,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         } catch (err) {
             console.error(err);
-            alert('❌ Ошибка при обновлении данных перед скачиванием');
+            alert('❌ Ошибка при обновлении данных после скачивания');
         }
     });
 

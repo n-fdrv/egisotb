@@ -22,7 +22,7 @@ from django.views.generic import TemplateView
 from django.contrib.auth import views as auth_views
 
 from api.views import register
-from passengers.views import passengers_list, crew_list
+from passengers.views import passengers_list, crew_list, user_detail
 
 urlpatterns = [
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
@@ -34,7 +34,7 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('register/', register, name='register'),
-    path('auth/', include('users.urls')),
+    path('user/<int:pk>/', user_detail, name='profile'),
 ]
 
 if settings.DEBUG:

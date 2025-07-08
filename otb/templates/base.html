@@ -43,7 +43,7 @@
                                 {{ user.get_full_name|default:user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
-                                <li><a class="dropdown-item disabled" href="#">Профиль</a></li>
+                                <li><a class="dropdown-item " href="{% url 'profile' pk=user.pk %}">Профиль</a></li>
                                 <li><a class="dropdown-item disabled" href="#">Настройки</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>

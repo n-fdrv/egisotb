@@ -148,3 +148,7 @@ tr:hover {
 .passengers-btn:hover {
     transform: scale(1.1);
 }
+
+#downloadFileBtn.no-data::before {
+    content: "⚠️ ";
+}

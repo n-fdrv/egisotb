@@ -32,6 +32,7 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     '[::1]',
     'testserver',
+    '192.168.1.69'
 ]
 
 
@@ -42,7 +43,6 @@ INSTALLED_APPS = [
     'passengers',
     'route',
     'rest_framework',
-    'users.apps.UsersConfig',
     'core.apps.CoreConfig',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -153,3 +153,5 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ],
 }
+
+SECURE_CROSS_ORIGIN_OPENER_POLICY=None
