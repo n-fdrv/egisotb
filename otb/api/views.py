@@ -75,12 +75,23 @@ def passenger_list(request):
                 },
                 status=400,
             )
-
-        if doc_type == 5 and not re.fullmatch(
+        elif doc_type == 5 and not re.fullmatch(
             r"^[IVX]{1,3}[А-Я]{2}\d{6}$", doc_number
         ):
             return Response(
                 {"error": "Неверный формат свидетельства о рождении"},
+                status=400,
+            )
+
+        data["doc_number"] = doc_number.replace(" ", "")
+
+        if (
+            not re.fullmatch(r"^[a-zA-Zа-яА-ЯёЁ]+$", data["surname"])
+            or not re.fullmatch(r"^[a-zA-Zа-яА-ЯёЁ]+$", data["name"])
+            or not re.fullmatch(r"^[a-zA-Zа-яА-ЯёЁ]+$", data["patronymic"])
+        ):
+            return Response(
+                {"error": "Неверный формат Фамилии/Имени/Отчества"},
                 status=400,
             )
 
