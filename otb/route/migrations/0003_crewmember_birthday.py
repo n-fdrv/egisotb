@@ -5,16 +5,17 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('route', '0002_alter_voyage_crew_alter_voyage_passengers'),
+        ("route", "0002_alter_voyage_crew_alter_voyage_passengers"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='crewmember',
-            name='birthday',
-            field=models.DateField(default=django.utils.timezone.now, verbose_name='Дата рождения'),
+            model_name="crewmember",
+            name="birthday",
+            field=models.DateField(
+                default=django.utils.timezone.now, verbose_name="Дата рождения"
+            ),
             preserve_default=False,
         ),
     ]

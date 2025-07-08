@@ -4,20 +4,19 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('route', '0007_remove_voyage_crew_remove_voyage_passengers'),
+        ("route", "0007_remove_voyage_crew_remove_voyage_passengers"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='voyage',
-            old_name='new_crew',
-            new_name='crew',
+            model_name="voyage",
+            old_name="new_crew",
+            new_name="crew",
         ),
         migrations.RenameField(
-            model_name='voyage',
-            old_name='new_passenger',
-            new_name='passenger',
+            model_name="voyage",
+            old_name="new_passenger",
+            new_name="passenger",
         ),
     ]

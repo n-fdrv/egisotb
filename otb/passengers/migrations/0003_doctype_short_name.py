@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('passengers', '0002_passenger_created_at_passenger_created_by_and_more'),
+        ("passengers", "0002_passenger_created_at_passenger_created_by_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='doctype',
-            name='short_name',
-            field=models.CharField(blank=True, max_length=32, null=True, verbose_name='Краткое название'),
+            model_name="doctype",
+            name="short_name",
+            field=models.CharField(
+                blank=True, max_length=32, null=True, verbose_name="Краткое название"
+            ),
         ),
     ]

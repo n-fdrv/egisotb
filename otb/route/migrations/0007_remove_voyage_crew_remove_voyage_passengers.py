@@ -4,18 +4,17 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('route', '0006_voyage_new_crew_voyage_new_passenger_and_more'),
+        ("route", "0006_voyage_new_crew_voyage_new_passenger_and_more"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='voyage',
-            name='crew',
+            model_name="voyage",
+            name="crew",
         ),
         migrations.RemoveField(
-            model_name='voyage',
-            name='passengers',
+            model_name="voyage",
+            name="passengers",
         ),
     ]

@@ -3,6 +3,7 @@
 {% load static %}
 
 {% block content %}
+{% load userfilters %}
 <div class="container py-5">
     <div class="row g-4">
         <!-- Профиль пользователя -->
@@ -24,11 +25,11 @@
                         {% endfor %}
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <span>Дата регистрации</span>
-                            <span>{{ user.date_joined|date:"d.m.Y H:i" }}</span>
+                            <span>{{ date_joined|date:"d.m.Y H:i" }}</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <span>Последний вход</span>
-                            <span>{{ user.last_login|default:"–"|date:"d.m.Y H:i" }}</span>
+                            <span>{{ last_login|default:"–"|date:"d.m.Y H:i" }}</span>
                         </li>
                     </ul>
 
@@ -139,7 +140,7 @@
                             <tbody>
                                 {% for log in activity_log %}
                                     <tr>
-                                        <td class="fw-semibold small">{{ log.time }}</td>
+                                        <td class="fw-semibold small">{{ log.time|to_msk }}</td>
                                         <td>{{ log.action }}</td>
                                         <td>{{ log.object_type }} "{{ log.object_repr }}"</td>
                                         <td class="text-muted small">{{ log.schedule|default:"–" }}</td>

@@ -4,16 +4,22 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('passengers', '0004_citizenship_created_at_citizenship_created_by_and_more'),
-        ('route', '0008_rename_new_crew_voyage_crew_and_more'),
+        ("passengers", "0004_citizenship_created_at_citizenship_created_by_and_more"),
+        ("route", "0008_rename_new_crew_voyage_crew_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='voyage',
-            name='passenger',
-            field=models.ManyToManyField(blank=True, null=True, related_name='schedules', through='route.PassengerVoyage', to='passengers.passenger', verbose_name='Пассажиры'),
+            model_name="voyage",
+            name="passenger",
+            field=models.ManyToManyField(
+                blank=True,
+                null=True,
+                related_name="schedules",
+                through="route.PassengerVoyage",
+                to="passengers.passenger",
+                verbose_name="Пассажиры",
+            ),
         ),
     ]

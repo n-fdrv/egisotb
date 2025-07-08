@@ -14,27 +14,32 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from django.urls import path, include
+
 from django.conf import settings
 from django.conf.urls.static import static
-from django.views.generic import TemplateView
+from django.contrib import admin
 from django.contrib.auth import views as auth_views
+from django.urls import include, path
+from django.views.generic import TemplateView
 
 from api.views import register
-from passengers.views import passengers_list, crew_list, user_detail
+from passengers.views import crew_list, passengers_list, user_detail
 
 urlpatterns = [
-    path('', TemplateView.as_view(template_name='home.html'), name='home'),
-    path('passengers/', passengers_list, name='passenger_list'),
-    path('crew/', crew_list, name='crew_list'),
-    path('api/', include('api.urls')),
-    path('schedules/', include('route.urls')),
-    path('admin/', admin.site.urls),
-    path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
-    path('register/', register, name='register'),
-    path('user/<int:pk>/', user_detail, name='profile'),
+    path("", TemplateView.as_view(template_name="home.html"), name="home"),
+    path("passengers/", passengers_list, name="passenger_list"),
+    path("crew/", crew_list, name="crew_list"),
+    path("api/", include("api.urls")),
+    path("schedules/", include("route.urls")),
+    path("admin/", admin.site.urls),
+    path(
+        "login/",
+        auth_views.LoginView.as_view(template_name="login.html"),
+        name="login",
+    ),
+    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+    path("register/", register, name="register"),
+    path("user/<int:pk>/", user_detail, name="profile"),
 ]
 
 if settings.DEBUG:
