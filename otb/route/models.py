@@ -77,6 +77,7 @@ class Voyage(models.Model):
     crew = models.ManyToManyField(CrewMember, related_name='schedules', verbose_name='Экипаж', null=True, blank=True)
     is_active = models.BooleanField(default=True, verbose_name='Статус рейса')
 
+
     def __str__(self):
         return f"{self.ferry} → {self.departure_date} - {self.departure_time}"
 

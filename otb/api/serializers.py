@@ -1,7 +1,10 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from passengers.models import Passenger, Citizenship, DocType
 from route.models import CrewMember, Ferry, Voyage
 
+
+User = get_user_model()
 
 class CitizenshipSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,9 +18,12 @@ class DocTypeSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'pk_for_file', 'short_name']
 
 
+
+
 class PassengerSerializer(serializers.ModelSerializer):
     citizenship = serializers.PrimaryKeyRelatedField(queryset=Citizenship.objects.all())
     doc_type = serializers.PrimaryKeyRelatedField(queryset=DocType.objects.all())
+    created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
 
     class Meta:
         model = Passenger

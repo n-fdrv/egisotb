@@ -65,6 +65,7 @@ def passenger_list(request):
         doc_type = data.get('doc_type')
         doc_number = data.get('doc_number')
 
+
         # --- Проверка формата документа ---
         if doc_type == 1 and not re.fullmatch(r'^\d{10}$', doc_number):
             return Response({'error': 'Неверный формат паспорта (должен состоять из 10 цифр)'}, status=400)
@@ -331,6 +332,8 @@ def crew_list(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return None
+
 
 @login_required
 @user_passes_test(is_operator)
