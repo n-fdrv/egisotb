@@ -1,8 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from passengers.models import Passenger, Citizenship, DocType
-from route.models import CrewMember, Ferry, Voyage
-
+from route.models import CrewMember, Ferry, Voyage, PassengerVoyage
 
 User = get_user_model()
 
@@ -18,12 +17,22 @@ class DocTypeSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'pk_for_file', 'short_name']
 
 
+class ScheduleSerializer(serializers.ModelSerializer):
+    ferry_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Voyage
+        fields = ['id', 'name', 'departure_date', 'ferry_name']
+
+    def get_ferry_name(self, obj):
+        return obj.ferry.name if obj.ferry else 'Неизвестен'
 
 
 class PassengerSerializer(serializers.ModelSerializer):
     citizenship = serializers.PrimaryKeyRelatedField(queryset=Citizenship.objects.all())
     doc_type = serializers.PrimaryKeyRelatedField(queryset=DocType.objects.all())
     created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    schedules = ScheduleSerializer(many=True, read_only=True)
 
     class Meta:
         model = Passenger
@@ -40,7 +49,8 @@ class PassengerSerializer(serializers.ModelSerializer):
             'doc_number',
             'created_at',
             'created_by',
-            'is_active'
+            'is_active',
+            'schedules'
         ]
         read_only_fields = ['created_at', 'created_by']
 

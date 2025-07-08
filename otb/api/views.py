@@ -19,7 +19,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 
-from route.models import Voyage, Ferry, CrewMember, CrewVoyage
+from route.models import Voyage, Ferry, CrewMember, CrewVoyage, PassengerVoyage
 from .pagination import StandardResultsSetPagination
 from .serializers import CitizenshipSerializer, DocTypeSerializer
 from passengers.models import Citizenship, DocType
@@ -105,6 +105,7 @@ def passenger_detail(request, pk):
         data['created_by'] = passenger.created_by.id if passenger.created_by else None
         data['surname'] = data.get('surname', '').upper()
         data['name'] = data.get('name', '').upper()
+        data['created_by'] = request.user.id  # Устанавливаем создателя
         if data['patronymic']:
             data['patronymic'] = data.get('patronymic', '').upper()
         serializer = PassengerSerializer(passenger, data=data)

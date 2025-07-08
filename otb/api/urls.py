@@ -7,7 +7,7 @@ urlpatterns = [
     path('citizenships/', views.citizenship_list),
     path('doctypes/', views.doctype_list),
     path('passengers/last_ticket/', views.get_last_ticket),
-    path('api/passengers/<int:pk>/checkin/', views.checkin_passenger_by_qr),
+    path('passengers/<int:pk>/checkin/', views.checkin_passenger_by_qr),
     path('schedules/', views.voyage_list),
     path('schedules/<int:pk>/', views.voyage_detail),
     path('schedules/<int:pk>/passengers/', views.schedule_passengers),

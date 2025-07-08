@@ -77,7 +77,7 @@
         </div>
     </div>
 
-<!-- Модальное окно -->
+<!-- Модальное окно добавления/редактирования пассажиров-->
     <div class="modal fade" id="passengerModal" tabindex="-1">
       <div class="modal-dialog modal-dialog-scrollable modal-xl">
         <div class="modal-content">
@@ -186,6 +186,70 @@
         </div>
       </div>
     </div>
+<!-- Модальное окно: данные пассажира -->
+    <div class="modal fade" id="passengerDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-sm rounded-3">
+            <div class="modal-header bg-primary text-white rounded-top p-4">
+                <h5 class="modal-title d-flex align-items-center gap-2">
+                    Информация о пассажире
+                </h5>
+            </div>
+
+            <div class="modal-body p-4">
+                <!-- Блок: основные данные -->
+                <section class="mb-4">
+                    <dl class="row g-2">
+                        <dt class="col-4"><strong>Ф.И.О.</strong></dt>
+                        <dd class="col-8 fs-5 fw-semibold" id="modalPassengerName"></dd>
+
+                        <dt class="col-4"><strong>Дата рождения</strong></dt>
+                        <dd class="col-8" id="modalPassengerBirthday"></dd>
+
+                        <dt class="col-4"><strong>Пол</strong></dt>
+                        <dd class="col-8" id="modalPassengerGender"></dd>
+
+                        <dt class="col-4"><strong>Гражданство</strong></dt>
+                        <dd class="col-8" id="modalPassengerCitizenship"></dd>
+                    </dl>
+                </section>
+
+                <!-- Блок: документ -->
+                <section class="mb-4">
+                    <h6 class="text-uppercase fw-bold mb-3">Документ</h6>
+                    <dl class="row g-2">
+                        <dt class="col-4"><strong>Тип</strong></dt>
+                        <dd class="col-8" id="modalPassengerDocType"></dd>
+
+                        <dt class="col-4"><strong>Номер</strong></dt>
+                        <dd class="col-8" id="modalPassengerDocNumber"></dd>
+                    </dl>
+                </section>
+
+                <!-- Блок: билет -->
+                <section class="mb-4">
+                    <h6 class="fw-bold mb-3">Билет</h6>
+                    <p class="fs-6 text-success" id="modalPassengerTicketNumber">–</p>
+                </section>
+
+                <!-- Блок: рейсы -->
+                <section>
+                    <h6 class="fw-bold mb-3">Рейс</h6>
+                    <ul id="modalPassengerTrips" class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center text-muted">
+                            <span>Нет данных</span>
+                        </li>
+                    </ul>
+                </section>
+            </div>
+
+            <div class="modal-footer bg-light py-3">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-4" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 {% block extra_js %}
 {% load static %}
@@ -499,7 +563,26 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
             </td>
         `;
-        tr.querySelector('.generateQRBtn')?.addEventListener('click', () => generateQRCode(p));
+        // --- Клик по строке → детали ---
+        tr.addEventListener('click', () => openPassengerDetails(p.id));
+
+        // --- Обработчики кнопок ---
+        tr.querySelector('.generateQRBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation(); // ❗️Остановка всплытия
+            generateQRCode(p);
+        });
+
+        tr.querySelector('.edit-btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openEditPassenger(p.id);
+        });
+
+        tr.querySelector('.delete-btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (confirm('Вы уверены?')) {
+                deletePassenger(p.id);
+            }
+        });
         passengerBody.appendChild(tr);
     });
 
@@ -874,6 +957,55 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelector('#qrModal .btn-primary')?.addEventListener('click', () => {
         printQR();
     });
+
+    // --- Функция загрузки данных в модальное окно ---
+    async function openPassengerDetails(id) {
+        try {
+            const res = await fetch(`/api/passengers/${id}/`);
+            if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
+
+            const passenger = await res.json();
+
+            // --- Заполняем основные данные ---
+            document.getElementById('modalPassengerName').textContent = `${passenger.surname} ${passenger.name}`;
+            document.getElementById('modalPassengerBirthday').textContent = passenger.birthday;
+            document.getElementById('modalPassengerGender').textContent = passenger.gender === 'M' ? 'Мужской' : 'Женский';
+            document.getElementById('modalPassengerCitizenship').textContent = passenger.citizenship?.name || 'Не указано';
+            document.getElementById('modalPassengerDocType').textContent = docTypesMapShort[passenger.doc_type] || 'Ошибка загрузки';
+            document.getElementById('modalPassengerDocNumber').textContent = passenger.doc_number;
+            document.getElementById('modalPassengerTicketNumber').textContent = passenger.ticket_number || '–';
+
+            // --- Загружаем связанные рейсы ---
+            const tripsList = document.getElementById('modalPassengerTrips');
+            tripsList.innerHTML = '';
+
+            if (passenger.schedules && passenger.schedules.length > 0) {
+                passenger.schedules.forEach(schedule => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item';
+                    li.innerHTML = `
+                        <strong>${schedule.name}</strong><br>
+                        <small>Дата: ${new Date(schedule.departure_date).toLocaleDateString()}<br>
+                        Паром: ${schedule.ferry_name}</small>
+                    `;
+                    tripsList.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.className = 'list-group-item text-muted';
+                li.textContent = 'Рейсов нет';
+                tripsList.appendChild(li);
+            }
+
+            // --- Открываем модальное окно ---
+            const detailsModal = new bootstrap.Modal(document.getElementById('passengerDetailsModal'));
+            detailsModal.show();
+
+        } catch (err) {
+            console.error(err);
+            alert('❌ Не удалось загрузить данные пассажира');
+        }
+    }
 
     // --- Инициализация ---
     loadCitizenships();
