@@ -10,29 +10,28 @@ class FerryAdmin(admin.ModelAdmin):
 
 @admin.register(Voyage)
 class VoyageAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'departure_date', 'departure_time', 'arrival_date', 'ferry', 'route_type']
+    list_display = [
+        'departure_date',
+        'route_time',
+        'ferry',
+    ]
     filter_horizontal = ['passengers', 'crew']
-    list_filter = ['departure_date', 'ferry', 'route_type']
-    search_fields = ['name', 'departure_port', 'arrival_port']
+    list_filter = ['departure_date', 'ferry']
+
 
 
 @admin.register(CrewMember)
 class CrewAdmin(admin.ModelAdmin):
     list_display = [
-        'surname',
-        'name',
-        'patronymic_or_na',
+        'fullname',
+        'ferry',
         'birthday',
-        'gender',
-        'citizenship',
-        'doc_type',
-        'doc_number',
         'rank',
-        'created_at',
+        'is_active',
     ]
 
     search_fields = ['surname', 'name', 'doc_number']
-    list_filter = ['citizenship', 'doc_type', 'gender']
+    list_filter = ['ferry', 'is_active']
 
     def patronymic_or_na(self, obj):
         return obj.patronymic if obj.patronymic else 'NA'

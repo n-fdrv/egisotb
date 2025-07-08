@@ -36,7 +36,7 @@ def download_schedule_data(request, pk):
         dt_str = f"{d}T{t}"
         dt = datetime.datetime.fromisoformat(dt_str)
         adjusted = dt - datetime.timedelta(hours=3)
-        return adjusted.isoformat(timespec='seconds')
+        return f"{adjusted.isoformat(timespec='minutes')}Z"
 
     def format_date(d: datetime.date):
         if not d:
@@ -81,9 +81,9 @@ def download_schedule_data(request, pk):
     operator_version = '20'
     operation_type_for_passenger = '8'
     operation_type_for_crew = '50'
-    amount = '0'
+    amount = float(0)
     currency = 'RUB'
-    register_time_is = now.isoformat(timespec='seconds')
+    register_time_is = f"{now.isoformat(timespec='minutes')}Z"
 
     # --- Экипаж ---
     for c in crew:
@@ -94,7 +94,7 @@ def download_schedule_data(request, pk):
             format_date(c.birthday),
             c.doc_type.pk_for_file,  # или используйте p.doc_type если нужно значение
             c.doc_number,
-            f"{schedule.departure_port} - {schedule.arrival_port}",
+            schedule.name,
             schedule.departure_port,
             schedule.arrival_port,
             depart_date,
@@ -140,7 +140,7 @@ def download_schedule_data(request, pk):
             format_date(p.birthday),
             p.doc_type.pk_for_file,  # или используйте p.doc_type если нужно значение
             p.doc_number,
-            f"{schedule.departure_port} - {schedule.arrival_port}",
+            schedule.name,
             schedule.departure_port,
             schedule.arrival_port,
             depart_date,

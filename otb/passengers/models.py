@@ -1,13 +1,14 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 
+from core.models import CreatedModel
 
 GENDER_CHOICES = [
     ('M', 'Мужской'),
     ('F', 'Женский'),
 ]
 
-class Citizenship(models.Model):
+class Citizenship(CreatedModel):
     name = models.CharField('Гражданство', max_length=100, unique=True)
 
     def __str__(self):
@@ -18,7 +19,7 @@ class Citizenship(models.Model):
         verbose_name_plural = 'Гражданства'
 
 
-class DocType(models.Model):
+class DocType(CreatedModel):
     name = models.CharField('Название документа', max_length=100)
     short_name = models.CharField("Краткое название", max_length=32, blank=True, null=True)
     pk_for_file = models.PositiveIntegerField(
@@ -33,7 +34,7 @@ class DocType(models.Model):
         verbose_name_plural = 'Типы документов'
 
 
-class Passenger(models.Model):
+class Passenger(CreatedModel):
     ticket_number = models.PositiveIntegerField('Номер билета')
     surname = models.CharField('Фамилия', max_length=100)
     name = models.CharField('Имя', max_length=100)
@@ -46,17 +47,13 @@ class Passenger(models.Model):
     doc_type = models.ForeignKey(DocType, on_delete=models.CASCADE, verbose_name='Вид документа')
     doc_number = models.CharField('Номер документа', max_length=50)
     is_active = models.BooleanField('Активный', default=True)
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
-    created_by = models.ForeignKey(
-        get_user_model(),
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name='Создан пользователем'
-    )
 
     def __str__(self):
         return f"{self.surname} {self.name}"
+
+
+    def fullname(self):
+        return f"{self.surname} {self.name} {self.patronymic}"
 
     class Meta:
         verbose_name = 'Пассажир'

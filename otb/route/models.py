@@ -1,5 +1,6 @@
 from django.db import models
 
+from core.models import CreatedModel
 from passengers.models import Citizenship, Passenger, GENDER_CHOICES, DocType
 
 
@@ -16,7 +17,7 @@ ROUTE_TYPE_CHOICES = [
 ]
 
 
-class Ferry(models.Model):
+class Ferry(CreatedModel):
     name = models.CharField('Название парома', max_length=100)
     registration_number = models.CharField('Регистрационный номер судна', max_length=50, unique=True)
     flag = models.ForeignKey(
@@ -36,7 +37,7 @@ class Ferry(models.Model):
         verbose_name_plural = 'Паромы'
 
 
-class CrewMember(models.Model):
+class CrewMember(CreatedModel):
     surname = models.CharField('Фамилия', max_length=100)
     name = models.CharField('Имя', max_length=100)
     patronymic = models.CharField('Отчество', max_length=100, blank=True, null=True)
@@ -52,10 +53,12 @@ class CrewMember(models.Model):
         Ferry, on_delete=models.CASCADE, verbose_name='Паром'
     )
     is_active = models.BooleanField('На смене', default=True)
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
 
     def __str__(self):
         return f"{self.surname} {self.name}"
+
+    def fullname(self):
+        return f"{self.surname} {self.name} {self.patronymic}"
 
     class Meta:
         verbose_name = 'Член экипажа'
@@ -63,7 +66,7 @@ class CrewMember(models.Model):
 
 
 
-class Voyage(models.Model):
+class Voyage(CreatedModel):
     name = models.CharField('Название рейса', max_length=100)
     departure_port = models.CharField('Пункт отправления', max_length=100)
     arrival_port = models.CharField('Пункт прибытия', max_length=100)
@@ -81,18 +84,20 @@ class Voyage(models.Model):
     def __str__(self):
         return f"{self.ferry} → {self.departure_date} - {self.departure_time}"
 
+    def route_time(self):
+        return f"{self.departure_time}-{self.arrival_time}"
+
     class Meta:
         verbose_name = 'Рейс'
         verbose_name_plural = 'Рейсы'
 
-class PassengerVoyage(models.Model):
+class PassengerVoyage(CreatedModel):
     voyage = models.ForeignKey(
         Voyage, on_delete=models.CASCADE, verbose_name='Рейс'
     )
     passenger = models.ForeignKey(
         Passenger, on_delete=models.CASCADE, verbose_name='Пассажир'
     )
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
 
     def __str__(self):
         return f"{self.voyage}: {self.passenger}"
@@ -102,14 +107,13 @@ class PassengerVoyage(models.Model):
         verbose_name_plural = 'Пассажиры на пароме'
 
 
-class CrewVoyage(models.Model):
+class CrewVoyage(CreatedModel):
     voyage = models.ForeignKey(
         Voyage, on_delete=models.CASCADE, verbose_name='Рейс'
     )
     crew = models.ForeignKey(
         CrewMember, on_delete=models.CASCADE, verbose_name='Экипаж'
     )
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
 
     def __str__(self):
         return f"{self.voyage}: {self.crew}"

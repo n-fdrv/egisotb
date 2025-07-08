@@ -283,47 +283,6 @@ document.addEventListener('DOMContentLoaded', function () {
         setupRowHandlers();
     }
 
-    // --- Пагинация ---
-    function renderPagination(total, current, next) {
-        pagination.style.display = total > 10 ? 'block' : 'none';
-        const ul = pagination.querySelector('.pagination');
-        ul.innerHTML = '';
-
-        if (current > 1) {
-            const prevLi = document.createElement('li');
-            prevLi.className = 'page-item';
-            prevLi.innerHTML = `<a class="page-link" href="#">«</a>`;
-            prevLi.addEventListener('click', e => {
-                e.preventDefault();
-                loadCrew(current - 1);
-            });
-            ul.appendChild(prevLi);
-        }
-
-        const totalPages = Math.ceil(total / 10);
-        for (let i = 1; i <= totalPages; i++) {
-            const li = document.createElement('li');
-            li.className = 'page-item' + (i === current ? ' active' : '');
-            li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
-            li.addEventListener('click', e => {
-                e.preventDefault();
-                loadCrew(i);
-            });
-            ul.appendChild(li);
-        }
-
-        if (next) {
-            const nextLi = document.createElement('li');
-            nextLi.className = 'page-item';
-            nextLi.innerHTML = `<a class="page-link" href="#">»</a>`;
-            nextLi.addEventListener('click', e => {
-                e.preventDefault();
-                loadCrew(next);
-            });
-            ul.appendChild(nextLi);
-        }
-    }
-
     // --- Обработчики строк ---
     function setupRowHandlers() {
         document.querySelectorAll('.edit-btn').forEach(btn => {
@@ -530,9 +489,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 const opt = document.createElement('option');
                 opt.value = d.id;
                 opt.textContent = `${d.name}`;
-                ferrySelect.appendChild(opt);
                 ferryFilter.appendChild(opt);
                 ferrySelectMap[d.id] = `${d.name}`;
+            });
+            data.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.textContent = `${d.name}`;
+                ferrySelect.appendChild(opt);
             });
         } catch (err) {
             console.error('Ошибка загрузки типов документов:', err);

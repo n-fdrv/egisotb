@@ -17,16 +17,12 @@ class DocTypeAdmin(admin.ModelAdmin):
 class PassengerAdmin(admin.ModelAdmin):
     list_display = [
         'ticket_number',
-        'surname',
-        'name',
-        'patronymic_or_na',
+        'fullname',
         'birthday',
         'gender',
-        'citizenship',
-        'doc_type',
-        'doc_number',
-        'created_at'
     ]
+    list_display_links = ['ticket_number', 'fullname']
+    readonly_fields = ['created_at']
     search_fields = ['surname', 'name', 'doc_number']
     list_filter = ['is_active', 'citizenship', 'doc_type', 'gender']
 
