@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, pagination
 
 from core.middlewares.users import is_operator
 from passengers.models import Passenger
@@ -20,6 +20,7 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 
 from route.models import Voyage, Ferry, CrewMember
+from .pagination import StandardResultsSetPagination
 from .serializers import CitizenshipSerializer, DocTypeSerializer
 from passengers.models import Citizenship, DocType
 
@@ -32,14 +33,12 @@ User = get_user_model()
 def passenger_list(request):
     if request.method == 'GET':
         passengers = Passenger.objects.all().order_by('-id')
-
         surname = request.GET.get('surname')
         name = request.GET.get('name')
         doc_number = request.GET.get('doc_number')
         ticket_number = request.GET.get('ticket_number')
         is_active = request.GET.get('is_active')
         limit = request.GET.get('limit')
-
 
         if surname:
             passengers = passengers.filter(surname__icontains=surname)
@@ -54,16 +53,21 @@ def passenger_list(request):
         if limit:
             passengers = passengers[:int(limit)]
 
+        paginator = StandardResultsSetPagination()
+        result_page = paginator.paginate_queryset(passengers, request)
 
-
-        serializer = PassengerSerializer(passengers, many=True)
-        return Response(serializer.data)
+        serializer = PassengerSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     elif request.method == 'POST':
         data = request.data.copy()
         data['created_by'] = request.user.id  # Устанавливаем создателя
         doc_type = data.get('doc_type')
         doc_number = data.get('doc_number')
+        data['surname'] = data.get('surname', '').upper()
+        data['name'] = data.get('name', '').upper()
+        if data['patronymic']:
+            data['patronymic'] = data.get('patronymic', '').upper()
 
 
         # --- Проверка формата документа ---
@@ -99,6 +103,10 @@ def passenger_detail(request, pk):
     elif request.method == 'PUT':
         data = request.data.copy()
         data['created_by'] = passenger.created_by.id if passenger.created_by else None
+        data['surname'] = data.get('surname', '').upper()
+        data['name'] = data.get('name', '').upper()
+        if data['patronymic']:
+            data['patronymic'] = data.get('patronymic', '').upper()
         serializer = PassengerSerializer(passenger, data=data)
         if serializer.is_valid():
             serializer.save()
@@ -327,7 +335,12 @@ def crew_list(request):
             return Response(serializer.data)
 
     elif request.method == 'POST':
-        serializer = CrewMemberSerializer(data=request.data)
+        data = request.data
+        data['surname'] = data.get('surname', '').upper()
+        data['name'] = data.get('name', '').upper()
+        if data['patronymic']:
+            data['patronymic'] = data.get('patronymic', '').upper()
+        serializer = CrewMemberSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -349,6 +362,11 @@ def crew_detail(request, pk):
         return Response(serializer.data)
 
     elif request.method == 'PUT':
+        data = request.data
+        data['surname'] = data.get('surname', '').upper()
+        data['name'] = data.get('name', '').upper()
+        if data['patronymic']:
+            data['patronymic'] = data.get('patronymic', '').upper()
         serializer = CrewMemberSerializer(member, data=request.data)
         if serializer.is_valid():
             serializer.save()

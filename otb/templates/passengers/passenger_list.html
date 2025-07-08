@@ -52,6 +52,10 @@
                 <!-- Сюда будут подгружаться строки -->
             </tbody>
         </table>
+        <!-- Пагинация -->
+        <nav aria-label="Page navigation" id="pagination" style="display: none;">
+            <ul class="pagination justify-content-center"></ul>
+        </nav>
 
         <!-- Модальное окно для QR кода -->
         <div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
@@ -91,17 +95,17 @@
                   <div class="col-md-6">
                       <div class="mb-3">
                         <label for="surnameInput" class="form-label">Фамилия</label>
-                        <input type="text" class="form-control" id="surnameInput" required>
+                        <input type="text" class="form-control text-uppercase" id="surnameInput" required>
                         <div class="invalid-feedback">Введите фамилию</div>
                       </div>
                       <div class="mb-3">
                         <label for="nameInput" class="form-label">Имя</label>
-                        <input type="text" class="form-control" id="nameInput" required>
+                        <input type="text" class="form-control text-uppercase" id="nameInput" required>
                         <div class="invalid-feedback">Введите имя</div>
                       </div>
                       <div class="mb-3">
                         <label for="patronymicInput" class="form-label">Отчество</label>
-                        <input type="text" class="form-control" id="patronymicInput">
+                        <input type="text" class="form-control text-uppercase" id="patronymicInput">
                       </div>
                       <div class="mb-3">
                         <label for="birthdayInput" class="form-label">Дата рождения</label>
@@ -354,7 +358,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const res = await fetch(url);
             if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
             const data = await res.json();
-            renderCopyTable(data);
+            renderCopyTable(data.results);
             setupCopyBtnHandlers(); // ← важно: обновляем обработчики
         } catch (err) {
             console.error(err);
@@ -442,7 +446,8 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
             const data = await res.json();
 
-            renderTable(data);
+            renderTable(data.results);
+            renderPagination(data.count, page, data.next ? page + 1 : null);
         } catch (err) {
             console.error(err);
             passengerBody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Ошибка загрузки</td></tr>';
@@ -548,47 +553,47 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function renderPagination(total, current, next) {
-    pagination.style.display = total > 10 ? 'block' : 'none';
-    const ul = pagination.querySelector('.pagination');
-    ul.innerHTML = '';
+        pagination.style.display = total > 30 ? 'block' : 'none';
+        const ul = pagination.querySelector('.pagination');
+        ul.innerHTML = '';
 
-    // Кнопка "Назад"
-    if (current > 1) {
-        const prevLi = document.createElement('li');
-        prevLi.className = 'page-item';
-        prevLi.innerHTML = `<a class="page-link" href="#">«</a>`;
-        prevLi.addEventListener('click', e => {
-            e.preventDefault();
-            loadPassengers(current - 1);
-        });
-        ul.appendChild(prevLi);
-    }
+        // Кнопка "Назад"
+        if (current > 1) {
+            const prevLi = document.createElement('li');
+            prevLi.className = 'page-item';
+            prevLi.innerHTML = `<a class="page-link" href="#">«</a>`;
+            prevLi.addEventListener('click', e => {
+                e.preventDefault();
+                loadPassengers(current - 1);
+            });
+            ul.appendChild(prevLi);
+        }
 
-    // Номера страниц
-    const totalPages = Math.ceil(total / 10); // page_size = 10
-    for (let i = 1; i <= totalPages; i++) {
-        const li = document.createElement('li');
-        li.className = 'page-item' + (i === current ? ' active' : '');
-        li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
-        li.addEventListener('click', e => {
-            e.preventDefault();
-            loadPassengers(i);
-        });
-        ul.appendChild(li);
-    }
+        // Номера страниц
+        const totalPages = Math.ceil(total / 30); // page_size = 30
+        for (let i = 1; i <= totalPages; i++) {
+            const li = document.createElement('li');
+            li.className = 'page-item' + (i === current ? ' active' : '');
+            li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+            li.addEventListener('click', e => {
+                e.preventDefault();
+                loadPassengers(i);
+            });
+            ul.appendChild(li);
+        }
 
-    // Кнопка "Вперёд"
-    if (next) {
-        const nextLi = document.createElement('li');
-        nextLi.className = 'page-item';
-        nextLi.innerHTML = `<a class="page-link" href="#">»</a>`;
-        nextLi.addEventListener('click', e => {
-            e.preventDefault();
-            loadPassengers(next);
-        });
-        ul.appendChild(nextLi);
+        // Кнопка "Вперёд"
+        if (next) {
+            const nextLi = document.createElement('li');
+            nextLi.className = 'page-item';
+            nextLi.innerHTML = `<a class="page-link" href="#">»</a>`;
+            nextLi.addEventListener('click', e => {
+                e.preventDefault();
+                loadPassengers(next);
+            });
+            ul.appendChild(nextLi);
+        }
     }
-}
 
     // --- Открытие формы для редактирования ---
        async function openEditPassenger(id) {
@@ -649,6 +654,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error(err);
             }
         }
+
 
     // --- Сохранение пассажира ---
     passengerForm.addEventListener('submit', async function (e) {
@@ -796,7 +802,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function fillFormFromPassenger(data) {
-        console.log(data)
         surnameInput.value = data.surname || '';
         nameInput.value = data.name || '';
         patronymicInput.value = data.patronymic || '';
