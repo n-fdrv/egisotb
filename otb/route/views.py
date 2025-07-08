@@ -6,7 +6,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
 
 from core.middlewares.users import is_operator
-from route.models import Voyage
+from route.models import Voyage, CrewVoyage, PassengerVoyage
 
 
 @login_required
@@ -176,6 +176,12 @@ def download_schedule_data(request, pk):
             'б/н',
         ]
         writer.writerow(row)
+
+    # Добавляем автора этого рейса
+
+    schedule.created_by = request.user
+    CrewVoyage.objects.filter(voyage=schedule).update(created_by=request.user)
+    PassengerVoyage.objects.filter(voyage=schedule).update(created_by=request.user)
 
     schedule.is_active = False
     schedule.save()

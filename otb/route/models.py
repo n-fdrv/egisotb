@@ -76,8 +76,8 @@ class Voyage(CreatedModel):
     arrival_time = models.TimeField('Время прибытия')
     ferry = models.ForeignKey(Ferry, on_delete=models.SET_NULL, verbose_name='Паром', null=True, blank=True)
     route_type = models.CharField('Тип маршрута', max_length=1, choices=ROUTE_TYPE_CHOICES)
-    passengers = models.ManyToManyField(Passenger, related_name='schedules', verbose_name='Пассажиры', null=True, blank=True)
-    crew = models.ManyToManyField(CrewMember, related_name='schedules', verbose_name='Экипаж', null=True, blank=True)
+    passengers = models.ManyToManyField(Passenger, verbose_name='Пассажиры', null=True, blank=True, through="PassengerVoyage", related_name="schedules")
+    crew = models.ManyToManyField(CrewMember, related_name='schedules', verbose_name='Экипаж', null=True, blank=True, through="CrewVoyage")
     is_active = models.BooleanField(default=True, verbose_name='Статус рейса')
 
 

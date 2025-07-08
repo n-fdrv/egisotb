@@ -19,7 +19,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 
-from route.models import Voyage, Ferry, CrewMember
+from route.models import Voyage, Ferry, CrewMember, CrewVoyage
 from .pagination import StandardResultsSetPagination
 from .serializers import CitizenshipSerializer, DocTypeSerializer
 from passengers.models import Citizenship, DocType
@@ -340,6 +340,7 @@ def crew_list(request):
         data['name'] = data.get('name', '').upper()
         if data['patronymic']:
             data['patronymic'] = data.get('patronymic', '').upper()
+        data['created_by'] = request.user.id
         serializer = CrewMemberSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -367,6 +368,7 @@ def crew_detail(request, pk):
         data['name'] = data.get('name', '').upper()
         if data['patronymic']:
             data['patronymic'] = data.get('patronymic', '').upper()
+        data['created_by'] = request.user.id
         serializer = CrewMemberSerializer(member, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -459,6 +461,8 @@ def apply_ferry_and_add_members(request, pk):
     # --- Добавляем членов экипажа к рейсу ---
     schedule.crew.add(*crew)
 
+    CrewVoyage.objects.filter(voyage=schedule).update(created_by=request.user)
+
     # --- Сохраняем рейс ---
     schedule.ferry_id = ferry_id
     schedule.save()
@@ -466,7 +470,6 @@ def apply_ferry_and_add_members(request, pk):
     # --- Возвращаем данные ---
     return Response({
         'detail': 'Паром и участники успешно обновлены',
-        'crew': list(crew.values('id', 'surname', 'name', 'doc_number'))
     })
 
 

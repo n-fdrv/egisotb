@@ -377,7 +377,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
 
             const data = await res.json();
-            allPassengers = data || [];
+            allPassengers = data.results || [];
             filteredAllPassengers = [...allPassengers];
 
             renderPassengerTabs(); // ← рендерим таблицу
@@ -420,7 +420,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 tr.dataset.id = p.id;
                 tr.innerHTML = `
                     <td>${p.ticket_number}</td>
-                    <td>${p.surname} ${p.name} ${p.patronymic}</td>
+                    <td>${p.surname} ${p.name} ${p.patronymic || ''}</td>
                     <td>${p.gender}</td>
                     <td>${new Date(p.birthday).toLocaleDateString()}</td>
                     <td>${docTypesMap[p.doc_type] || 'Ошибка загрузки'}: ${p.doc_number}</td>
@@ -437,7 +437,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             tr.dataset.id = p.id;
             tr.innerHTML = `
                 <td>${p.ticket_number}</td>
-                <td>${p.surname} ${p.name} ${p.patronymic}</td>
+                <td>${p.surname} ${p.name} ${p.patronymic || ''}</td>
                 <td>${p.gender}</td>
                 <td>${new Date(p.birthday).toLocaleDateString()}</td>
                 <td>${docTypesMap[p.doc_type] || 'Ошибка загрузки'}: ${p.doc_number}</td>

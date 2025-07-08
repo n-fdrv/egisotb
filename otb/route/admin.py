@@ -1,6 +1,21 @@
 from django.contrib import admin
-from .models import Ferry, Voyage, CrewMember
+from .models import Ferry, Voyage, CrewMember, CrewVoyage, PassengerVoyage
 
+
+class CrewVoyageInline(admin.TabularInline):
+    model = CrewVoyage
+    extra = 1
+    readonly_fields = ('created_at', 'created_by')
+    autocomplete_fields = ['crew']
+    fields = ('crew', 'created_by', 'created_at')
+
+
+class PassengerVoyageInline(admin.TabularInline):
+    model = PassengerVoyage
+    extra = 1
+    readonly_fields = ('created_at', 'created_by')
+    autocomplete_fields = ['passenger']
+    fields = ('passenger', 'created_by', 'created_at')
 
 @admin.register(Ferry)
 class FerryAdmin(admin.ModelAdmin):
@@ -14,9 +29,19 @@ class VoyageAdmin(admin.ModelAdmin):
         'departure_date',
         'route_time',
         'ferry',
+        'get_crew_count',
+        'get_passenger_count',
     ]
-    filter_horizontal = ['passengers', 'crew']
+    inlines = [CrewVoyageInline, PassengerVoyageInline]
     list_filter = ['departure_date', 'ferry']
+
+    def get_crew_count(self, obj):
+        return obj.crewvoyage_set.count()
+    get_crew_count.short_description = 'Членов экипажа'
+
+    def get_passenger_count(self, obj):
+        return obj.passengervoyage_set.count()
+    get_passenger_count.short_description = 'Пассажиров'
 
 
 

@@ -58,6 +58,7 @@ class CrewMemberSerializer(serializers.ModelSerializer):
     citizenship = serializers.PrimaryKeyRelatedField(queryset=Citizenship.objects.all())
     doc_type = serializers.PrimaryKeyRelatedField(queryset=DocType.objects.all())
     ferry = serializers.PrimaryKeyRelatedField(queryset=Ferry.objects.all())
+    created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
 
 
     class Meta:
@@ -73,7 +74,8 @@ class CrewMemberSerializer(serializers.ModelSerializer):
                   'doc_number',
                   'gender',
                   'ferry',
-                  'is_active']
+                  'is_active',
+                  'created_by']
 
 class VoyageSerializer(serializers.ModelSerializer):
     ferry = serializers.PrimaryKeyRelatedField(queryset=Ferry.objects.all(), required=False)
