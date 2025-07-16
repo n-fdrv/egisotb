@@ -398,7 +398,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 crewModal.hide();
                 loadCrew();
                 resetForm();
-                alert(isEditMode ? 'Данные обновлены' : 'Член экипажа создан');
             } else {
                 const errData = await res.json();
                 console.error('Ошибка API:', errData);

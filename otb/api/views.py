@@ -86,9 +86,9 @@ def passenger_list(request):
         data["doc_number"] = doc_number.replace(" ", "")
 
         if (
-            not re.fullmatch(r"^[a-zA-Zа-яА-ЯёЁ]+$", data["surname"])
-            or not re.fullmatch(r"^[a-zA-Zа-яА-ЯёЁ]+$", data["name"])
-            or not re.fullmatch(r"^[a-zA-Zа-яА-ЯёЁ]+$", data["patronymic"])
+            not re.fullmatch(r"^[a-zA-Zа-яА-ЯёЁ\-]+$", data["surname"])
+            or not re.fullmatch(r"^[a-zA-Zа-яА-ЯёЁ\-]+$", data["name"])
+            or not re.fullmatch(r"^[a-zA-Zа-яА-ЯёЁ\-]+$", data["patronymic"])
         ):
             return Response(
                 {"error": "Неверный формат Фамилии/Имени/Отчества"},

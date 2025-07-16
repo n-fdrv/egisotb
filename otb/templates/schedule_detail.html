@@ -332,6 +332,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     const activeCrewList = document.getElementById('activeCrewList');
     const onScheduleCrewList = document.getElementById('onScheduleCrewList');
 
+
+
     function updatePassengerAndCrewCount() {
         const passengerCount = passengersOnSchedule.length;
         const crewCount = crewOnSchedule.length;
@@ -588,6 +590,28 @@ document.addEventListener('DOMContentLoaded', async function () {
                 });
             });
 
+            const resSch = await fetch(`/api/schedules/${scheduleId}/`);
+            if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
+
+            const dataSchedule = await resSch.json();
+
+            // --- Проверяем, есть ли у рейса паром ---
+            if (dataSchedule.detail.ferry) {
+                const ferryId = dataSchedule.detail.ferry;
+                console.log(ferryId);
+                // ← Устанавливаем значение в селект
+                ferrySelect.value = ferryId;
+                ferrySelect.dispatchEvent(new Event('change')); // ← триггерим обработчики
+
+                // ← Опционально: можно подсветить выбор
+                ferrySelect.classList.add('is-valid');
+            } else {
+                ferrySelect.value = '';
+                ferrySelect.classList.add('is-invalid');
+                ferrySelect.title = 'У этого рейса нет парома';
+            }
+
+
         } catch (err) {
             console.error(err);
             ferrySelects.forEach(select => {
@@ -636,11 +660,9 @@ document.addEventListener('DOMContentLoaded', async function () {
             renderPassengerTabs();
             renderCrewTabs();
 
-            alert(`✅ Добавлено: ${crewOnSchedule.length} членов экипажа`);
 
         } catch (err) {
             console.error(err);
-            alert('❌ Ошибка при применении парома');
         }
     }
 
@@ -651,13 +673,15 @@ document.addEventListener('DOMContentLoaded', async function () {
                 alert('❗ Выберите паром');
                 return;
             }
-            window.location.reload();
+
 
             await applyFerryAndAddAllMembers(parseInt(ferryId));
             renderCrewTabs(); // ← отрисовываем данные
             const selectedOption = ferrySelect.options[ferrySelect.selectedIndex];
-            ferryName.textContent = selectedOption.text;;
+            ferryName.textContent = selectedOption.text;
+            loadCrewOnSchedule();
 
+            alert('✅ Паром выбран');
         });
 
 

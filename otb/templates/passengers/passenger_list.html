@@ -599,15 +599,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
 
-        document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', function () {
-                const row = this.closest('tr');
-                const id = row.dataset.id;
-                if (confirm('Вы уверены?')) {
-                    deletePassenger(id);
-                }
-            });
-        });
+
     }
 
     function setupCopyBtnHandlers() {
@@ -780,7 +772,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 passengerModal.hide();
                 loadPassengers();
                 resetForm();
-                alert(isEditMode ? 'Данные обновлены' : 'Пассажир создан');
             } else {
                 const errData = await res.json();
                 console.error('Ошибка API:', errData);
@@ -893,7 +884,7 @@ document.addEventListener('DOMContentLoaded', function () {
         citizenshipSelect.value = data.citizenship || '';
         docTypeSelect.value = data.doc_type || '';
         docNumberInput.value = data.doc_number || '';
-        isActiveCheck.checked = data.is_active !== undefined ? data.is_active : true;
+        isActiveCheck.checked = true;
 
         // Сбрасываем passengerId → чтобы создался новый пассажир
         passengerIdInput.value = '';
