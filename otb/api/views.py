@@ -280,8 +280,6 @@ def add_crew_to_schedule(request, pk):
         crew = CrewMember.objects.get(pk=crew_id)
 
         schedule.crew.add(crew)
-        crew.is_active = False
-        crew.save()
 
         return Response({"detail": "Член экипажа добавлен"})
     except Exception as e:
@@ -298,8 +296,6 @@ def remove_crew_from_schedule(request, pk):
         crew = CrewMember.objects.get(pk=crew_id)
 
         schedule.crew.remove(crew)
-        crew.is_active = True
-        crew.save()
 
         return Response({"detail": "Член экипажа удалён"})
     except Exception as e:

@@ -682,6 +682,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             loadCrewOnSchedule();
 
             alert('✅ Паром выбран');
+            window.location.reload();
         });
 
 
@@ -794,7 +795,6 @@ document.addEventListener('DOMContentLoaded', async function () {
             if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
             crewOnSchedule.push(crewMember);
             allCrew = allCrew.filter(c => c.id !== crewMember.id);
-            filteredAllCrew = [...allCrew];
 
             updatePassengerAndCrewCount();
             renderCrewTabs();
@@ -817,12 +817,11 @@ document.addEventListener('DOMContentLoaded', async function () {
 
             if (!res.ok) throw new Error(`Ошибка сети: ${res.status}`);
 
+
             // Убираем из списка на рейсе
             crewOnSchedule = crewOnSchedule.filter(c => c.id !== crewMember.id);
 
             // Возвращаем в общий список
-            allCrew.push(crewMember);
-            filteredAllCrew = [...allCrew];
 
             updatePassengerAndCrewCount();
             renderCrewTabs(); // ← важно: перерисовываем таблицы
