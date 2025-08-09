@@ -7,6 +7,23 @@ GENDER_CHOICES = [
     ("F", "Женский"),
 ]
 
+USER_ACTION_CHOICES = [
+    ("add_passenger", "Добавил пассажира в базу"),
+    ("passenger_to_schedule", "Добавил пассажиров на рейс"),
+    ("send_schedule", "Отправил рейс"),
+]
+
+
+class UserStats(CreatedModel):
+    action = models.CharField(
+        "Действие", max_length=32, choices=USER_ACTION_CHOICES
+    )
+    amount = models.IntegerField(default=0, verbose_name="Количество")
+
+    class Meta:
+        verbose_name = "Статистика"
+        verbose_name_plural = "Статистика"
+
 
 class Citizenship(CreatedModel):
     name = models.CharField("Гражданство", max_length=100, unique=True)

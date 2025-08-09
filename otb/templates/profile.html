@@ -73,77 +73,36 @@
 
                         <dt class="col-sm-5 mt-3"><strong>Добавлено пассажиров на рейсы:</strong></dt>
                         <dd class="col-sm-7 mt-3 fs-5" id="totalPassengersOnSchedule">{{ added_passengers_on_schedule }}</dd>
-
-                        <dt class="col-sm-5 mt-3"><strong>Добавлено экипажа на рейсы:</strong></dt>
-                        <dd class="col-sm-7 mt-3 fs-5" id="totalCrewAdded">{{ crew_member_count }}</dd>
                     </dl>
                 </div>
             </div>
 
-            <!-- Последние рейсы -->
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Последние рейсы</h5>
-                    <span class="badge bg-primary">{{ recent_schedules|length }}</span>
-                </div>
-                <div class="card-body p-0">
-                    {% if recent_schedules %}
-                        <table class="table table-hover table-striped table-sm mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Дата / Время</th>
-                                    <th>Паром</th>
-                                    <th class="text-end">Пассажиров</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for schedule in recent_schedules %}
-                                    <tr class="align-middle">
-                                        <td>
-                                            <a href="/schedules/{{ schedule.id }}/" class="text-decoration-none text-dark fw-semibold">
-                                                {{ schedule.departure_date|date:"d.m.Y" }} {{ schedule.departure_time }}
-                                            </a>
-                                        </td>
-                                        <td>
-                                            <a href="/schedules/{{ schedule.id }}/" class="text-decoration-none text-dark fw-semibold">
-                                            {{ schedule.ferry|default:"–" }}
-                                            </a>
-                                        </td>
-                                        <td class="text-end text-muted">{{ schedule.passenger_count }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    {% else %}
-                        <p class="list-group-item text-muted mb-0">Нет данных о последних рейсах</p>
-                    {% endif %}
-                </div>
-            </div>
 
             <!-- Блок: активность -->
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Активность</h5>
-                    <span class="badge bg-primary">{{ activity_log|length }}</span>
+                    <span class="badge bg-primary">{{ logs|length }}</span>
                 </div>
                 <div class="card-body p-0">
-                    {% if activity_log %}
+                    {% if logs %}
                         <table class="table table-hover table-bordered table-sm mb-0">
                             <thead class="table-light">
                                 <tr>
                                     <th>Время</th>
                                     <th>Действие</th>
-                                    <th>Объект</th>
-                                    <th>Рейс</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for log in activity_log %}
+                                {% for log in logs %}
                                     <tr>
-                                        <td class="fw-semibold small">{{ log.time|to_msk }}</td>
-                                        <td>{{ log.action }}</td>
-                                        <td>{{ log.object_type }} "{{ log.object_repr }}"</td>
-                                        <td class="text-muted small">{{ log.schedule|default:"–" }}</td>
+                                        <td class="fw-semibold small">{{ log.created_at }}</td>
+                                        <td>
+                                            {{ log.get_action_display }}
+                                            {% if log.action == 'passenger_to_schedule' %}
+                                            в количестве {{ log.amount }} чел.
+                                            {% endif %}
+                                        </td>
                                     </tr>
                                 {% endfor %}
                             </tbody>

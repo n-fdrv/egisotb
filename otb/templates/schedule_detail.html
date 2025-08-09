@@ -110,6 +110,9 @@
                             </svg>
                             Разблокировать
                         </button>
+                        <button id="clearScheduleDataBtn" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1 {% if schedule.is_active %} d-none {% endif %}">
+                            🗑 Очистить данные
+                        </button>
                     </div>
                 </dl>
             </div>
@@ -936,10 +939,12 @@ document.addEventListener('DOMContentLoaded', async function () {
             const downloadBtn = document.getElementById('downloadFileBtn');
             const scanQRBtn = document.getElementById('scanQRBtn');
             const unlockBtn = document.getElementById('unlockScheduleBtn');
+            const clearBtn = document.getElementById('clearScheduleDataBtn');
 
             downloadBtn.classList.remove('d-none');
             scanQRBtn.classList.remove('d-none');
             unlockBtn.classList.add('d-none');
+            clearBtn.classList.add('d-none');
 
             statusBadge.innerHTML = `
                 <span class="badge bg-success">Активен</span>
@@ -952,6 +957,50 @@ document.addEventListener('DOMContentLoaded', async function () {
         } catch (err) {
             console.error(err);
             alert('❌ Ошибка разблокировки');
+        }
+    });
+
+    // --- Кнопка: очистка данных рейса ---
+    document.getElementById('clearScheduleDataBtn')?.addEventListener('click', async function () {
+       const confirmed = confirm(
+            '⚠️ ВНИМАНИЕ: Очистка данных рейса\n\n' +
+            'Вы действительно хотите удалить:\n' +
+            '  • ВСЕХ пассажиров\n' +
+            '  • ВСЕХ членов экипажа\n' +
+            'с этого рейса?\n\n' +
+            '❗ Данные будут безвозвратно удалены.\n\n' +
+            '✅ Делайте это ТОЛЬКО ПОСЛЕ:\n' +
+            '   • Проверки квитанции\n' +
+            '   • Успешной загрузки данных в ЕГИС ОТБ\n\n' +
+            'Отменить действие будет НЕВОЗМОЖНО.\n\n' +
+            'Продолжить?'
+        );
+
+        if (!confirmed) return;
+
+        try {
+            const res = await fetch(`/api/schedules/${scheduleId}/clear_data/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                alert(`❌ Ошибка: ${errData.error}`);
+                return;
+            }
+
+            const result = await res.json();
+            alert(`✅ Данные очищены:\n- Пассажиров удалено: ${result.passengers_deleted}\n- Экипажей удалено: ${result.crew_deleted}`);
+
+            window.location.href = '/schedules/';
+
+        } catch (err) {
+            console.error(err);
+            alert('❌ Ошибка сети при очистке данных');
         }
     });
 

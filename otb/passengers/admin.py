@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from .models import Citizenship, DocType, Passenger
+from .models import Citizenship, DocType, Passenger, UserStats
+
+
+@admin.register(UserStats)
+class UserStatsAdmin(admin.ModelAdmin):
+    list_display = ["action", "created_by", "created_at"]
+    list_filter = ["action", "created_by"]
 
 
 @admin.register(Citizenship)

@@ -18,7 +18,7 @@ from api.serializers import (
     VoyageSerializer,
 )
 from core.middlewares.users import is_operator
-from passengers.models import Citizenship, DocType, Passenger
+from passengers.models import Citizenship, DocType, Passenger, UserStats
 from route.models import CrewMember, CrewVoyage, Ferry, Voyage
 
 from .pagination import StandardResultsSetPagination
@@ -98,6 +98,9 @@ def passenger_list(request):
         serializer = PassengerSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
+            UserStats.objects.create(
+                action="add_passenger", created_by=request.user
+            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -543,6 +546,41 @@ def checkin_passenger_by_qr(request, pk):
     passenger.save()
 
     return Response({"detail": "Пассажир добавлен на рейс"})
+
+
+@api_view(["POST"])
+@user_passes_test(is_operator)
+def clear_schedule_data(request, schedule_id):
+    try:
+        # --- Удаляем пассажиров ---
+        voyage = Voyage.objects.get(pk=schedule_id)
+        voyage_passengers = voyage.passengers.values_list("id")
+        passengers_deleted = voyage.passengers.count()
+        Passenger.objects.filter(pk__in=voyage_passengers).delete()
+        crew_deleted = voyage.crew.count()
+        voyage.crew.clear()
+        voyage.passengers.clear()
+        voyage.delete()
+
+        UserStats.objects.create(
+            action="passenger_to_schedule",
+            amount=passengers_deleted,
+            created_by=request.user,
+        )
+        UserStats.objects.create(
+            action="send_schedule", created_by=request.user
+        )
+
+        return Response(
+            {
+                "success": True,
+                "passengers_deleted": passengers_deleted,
+                "crew_deleted": crew_deleted,
+            }
+        )
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
 
 
 @csrf_exempt
