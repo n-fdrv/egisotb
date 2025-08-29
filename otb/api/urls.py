@@ -36,4 +36,5 @@ urlpatterns = [
     path("schedules/<int:pk>/unlock/", views.unlock_schedule),
     path("crew/", views.crew_list),
     path("crew/<int:pk>/", views.crew_detail),
+    path("crew/swap_shift/", views.swap_crew_shift, name="swap_crew_shift"),
 ]

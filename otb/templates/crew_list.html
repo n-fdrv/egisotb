@@ -34,6 +34,13 @@
         <select id="ferryFilter" class="form-select w-auto">
         </select>
     </div>
+    <div class="mb-4 d-flex align-items-center gap-3">
+    <label for="ferrySwapSelect" class="fw-bold mb-0">Сменить экипаж:</label>
+    <select id="ferrySwapSelect" class="form-select w-auto">
+        <option value="">Выберите паром</option>
+    </select>
+    <button id="swapCrewBtn" class="btn btn-primary">Применить</button>
+</div>
     <!-- Таблица -->
     <table class="table table-hover">
         <thead>
@@ -191,6 +198,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const searchPosition = document.getElementById('searchPosition');
     const activeFilter = document.getElementById('activeFilter');
     const ferryFilter = document.getElementById('ferryFilter');
+    const ferrySwapSelect = document.getElementById('ferrySwapSelect');
 
     const crewModal = new bootstrap.Modal(document.getElementById('crewModal'));
     const crewForm = document.getElementById('crewForm');
@@ -482,6 +490,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await res.json();
             ferrySelect.innerHTML = '<option value="">-- Выберите --</option>';
             ferryFilter.innerHTML = '<option value="">-- Выберите --</option>';
+            ferrySwapSelect.innerHTML = '<option value="">-- Выберите --</option>';
             ferrySelectMap = {}; // ← очищаем старые данные
 
             data.forEach(d => {
@@ -497,10 +506,64 @@ document.addEventListener('DOMContentLoaded', function () {
                 opt.textContent = `${d.name}`;
                 ferrySelect.appendChild(opt);
             });
+            data.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.textContent = `${d.name}`;
+                ferrySwapSelect.appendChild(opt);
+            });
         } catch (err) {
             console.error('Ошибка загрузки типов документов:', err);
         }
     }
+
+    // --- Кнопка: смена экипажа ---
+    document.getElementById('swapCrewBtn')?.addEventListener('click', async function () {
+        const ferryId = document.getElementById('ferrySwapSelect').value;
+
+        if (!ferryId) {
+            alert('❌ Выберите паром');
+            return;
+        }
+
+        const ferryName = ferrySelectMap[ferryId] || 'Неизвестный паром';
+
+        const confirmed = confirm(
+            `Вы уверены, что хотите изменить статус смены для ВСЕХ членов экипажа на пароме "${ferryName}"?\n\n` +
+            `Те, кто на смене — станут в выходные.\n` +
+            `Те, кто в выходных — выйдут на смену.\n\n` +
+            `Продолжить?`
+        );
+
+        if (!confirmed) return;
+
+        try {
+            const res = await fetch(`/api/crew/swap_shift/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ ferry_id: ferryId })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                alert(`❌ Ошибка: ${err.error}`);
+                return;
+            }
+
+            const result = await res.json();
+            alert(`✅ Смена обновлена:\n- Изменено: ${result.updated_count}`);
+
+            // ← Обновляем таблицу
+            loadCrew();
+
+        } catch (err) {
+            console.error(err);
+            alert('❌ Ошибка сети при смене статуса');
+        }
+    });
 
 
     // --- Инициализация ---

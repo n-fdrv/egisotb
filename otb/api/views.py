@@ -410,6 +410,32 @@ def crew_detail(request, pk):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@api_view(["POST"])
+@user_passes_test(is_operator)
+def swap_crew_shift(request):
+    ferry_id = request.data.get("ferry_id")
+
+    if not ferry_id:
+        return Response({"error": "Не указан паром"}, status=400)
+
+    # ← Получаем всех членов экипажа парома
+    crew = CrewMember.objects.filter(ferry_id=ferry_id)
+
+    if not crew.exists():
+        return Response(
+            {"error": "Нет членов экипажа на этом пароме"}, status=404
+        )
+
+    # ← Меняем is_active на противоположное
+    updated_count = 0
+    for member in crew:
+        member.is_active = not member.is_active
+        member.save()
+        updated_count += 1
+
+    return Response({"success": True, "updated_count": updated_count})
+
+
 @login_required
 @user_passes_test(is_operator)
 @api_view(["POST"])
